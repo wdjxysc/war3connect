@@ -1,11 +1,13 @@
-param([Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$Address)
+param([Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$Address, [switch]$AllowInsecureHttp)
 # Creates two isolated diagnostic accounts, then closes the test room and logs out.
 # Random passwords/tokens stay in process memory and are never printed.
 $ErrorActionPreference = 'Stop'
 $uri = $null
-if (-not [Uri]::TryCreate($Address, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https' -or $uri.UserInfo -or $uri.Query -or $uri.Fragment -or $uri.AbsolutePath -ne '/') {
-    throw '请提供不含账号信息的 HTTPS 服务器根地址。'
+if (-not [Uri]::TryCreate($Address, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -notin @('https', 'http') -or $uri.UserInfo -or $uri.Query -or $uri.Fragment -or $uri.AbsolutePath -ne '/') {
+    throw '请提供不含账号信息的 HTTP/HTTPS 服务器根地址。'
 }
+if ($uri.Scheme -eq 'http' -and -not $uri.IsLoopback -and -not $AllowInsecureHttp) { throw '远程 HTTP 需显式指定 -AllowInsecureHttp。' }
+if ($uri.Scheme -eq 'http') { Write-Warning '当前测试使用未加密 HTTP/WS，诊断账号和传输内容可能被网络监听。' }
 $Address = $uri.AbsoluteUri.TrimEnd('/')
 $suffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
 $probeHost = $null
@@ -49,7 +51,7 @@ try {
     $writer.Dispose(); $packet.Dispose()
     $null = Send-Api "/api/rooms/$($room.id)/game" @{packet=[Convert]::ToBase64String($bytes)} $probeHost
     $tunnel = Send-Api "/api/rooms/$($room.id)/tunnels" @{} $probeGuest
-    $wsUri = [Uri]::new(($Address -replace '^https:', 'wss:') + '/relay/' + $tunnel.id)
+    $wsUri = [Uri]::new(($Address -replace '^https:', 'wss:' -replace '^http:', 'ws:') + '/relay/' + $tunnel.id)
     $hostSocket.Options.SetRequestHeader('Authorization', 'Bearer ' + $probeHost.token)
     $guestSocket.Options.SetRequestHeader('Authorization', 'Bearer ' + $probeGuest.token)
     $null = $hostSocket.ConnectAsync($wsUri, $timeout.Token).GetAwaiter().GetResult()
@@ -71,7 +73,7 @@ try {
     $payload = [byte[]]::new(24000)
     [Security.Cryptography.RandomNumberGenerator]::Fill($payload)
     Check-Transfer $guestSocket $hostSocket $payload
-    Write-Output 'PASS: 公网可信 HTTPS、注册登录、房间加入、WSS 双向中继与分片传输。'
+    Write-Output ('PASS: ' + $uri.Scheme.ToUpperInvariant() + ' 注册登录、房间加入、WebSocket 双向中继与分片传输。')
     Write-Output "诊断账号：probeH_$suffix / probeG_$suffix（随机密码未保存）。"
 } finally {
     $hostSocket.Dispose(); $guestSocket.Dispose(); $timeout.Dispose()

@@ -1,8 +1,8 @@
-# War3 Connect 0.3.0
+# War3 Connect 0.3.1
 
 C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平台内测版。
 
-公开仓库不包含实际服务器地址。请在客户端填写管理员提供的 HTTPS 地址，或使用本机开发服务。0.3.0 的原生地图流程需要同步更新服务端和客户端；部署说明见 [通用部署指南](docs/DEPLOYMENT.md)。
+公开仓库不包含实际服务器地址。请在客户端填写管理员提供的 HTTPS 地址，或显式启用无证书 HTTP 模式，也可使用本机开发服务。0.3.0 的原生地图流程需要同步更新服务端和客户端；部署说明见 [通用部署指南](docs/DEPLOYMENT.md)。
 
 当前实现已通过模拟游戏的自动化联机测试。尚未用两台运行真实 War3 1.27 的电脑完成对局验收，因此不应将此版本视为已经验证兼容的正式对战平台。平台不包含游戏程序或地图。
 
@@ -37,7 +37,7 @@ C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平
 ./scripts/start-client.ps1
 ```
 
-本地服务端默认监听 `http://127.0.0.1:5080`，测试本地服务时请在客户端填写此地址。客户端首次启动默认地址为 `http://127.0.0.1:5080`；连接远程服务器时自行填写 HTTPS 地址。首次使用点击“注册”即可注册并登录；账号数据保存在根目录 `data/accounts.json`。客户端只保存服务器、用户名、游戏路径、Wine 设置，不保存密码或会话令牌，设置位于 `%LOCALAPPDATA%/War3Connect/settings.json`。
+本地服务端默认监听 `http://127.0.0.1:5080`，测试本地服务时请在客户端填写此地址。客户端首次启动默认地址为 `http://127.0.0.1:5080`；连接远程服务器时自行填写地址；HTTP 地址需勾选“允许 HTTP（无证书）”。首次使用点击“注册”即可注册并登录；账号数据保存在根目录 `data/accounts.json`。客户端只保存服务器、用户名、游戏路径、Wine 设置，不保存密码或会话令牌，设置位于 `%LOCALAPPDATA%/War3Connect/settings.json`。
 
 脚本仅在程序尚未构建时自动编译。修改代码后请重新运行构建脚本。
 
@@ -47,7 +47,8 @@ C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平
 
 ```json
 {
-  "ServerUrl": "http://127.0.0.1:5080"
+  "ServerUrl": "http://127.0.0.1:5080",
+  "AllowInsecureHttp": false
 }
 ```
 
@@ -55,7 +56,9 @@ C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平
 - **使用默认** 会重新读取程序旁的 `clientsettings.json`，并将其中地址保存为当前用户设置。修改默认配置后，已有用户可点击此按钮切换。
 - 读取优先级：有效的用户设置 → 程序旁默认配置 → 内置本机开发地址。配置不存在或损坏时会回退；损坏或无效配置的原因显示在连接日志中。
 - 支持完整 HTTPS 根地址和自定义端口，例如 `https://example.com:8443`；本地开发/SSH 隧道允许 `http://127.0.0.1:5080` 或 `http://127.0.0.1:15080`。
-- 公网 HTTP、账号密码嵌入地址、URL 子路径/查询参数不被接受。登录后地址锁定，切换服务器需先退出账号。
+- 默认拒绝远程 HTTP；需要无证书连接时，勾选“允许 HTTP（无证书）”并保存，或在默认配置中设置 `AllowInsecureHttp: true`。HTTP 使用 WS；HTTPS 使用 WSS，证书校验不会被关闭。
+- HTTP 会明文传输账号密码、令牌和游戏数据，仅在可信网络或测试环境启用。
+- 账号密码嵌入地址、URL 子路径/查询参数仍不被接受。登录后地址和 HTTP 开关锁定，切换需先退出账号。
 
 ## 发布包
 
@@ -65,9 +68,9 @@ C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平
 
 输出：
 
-- `artifacts/release/War3Connect-client-win-x64-0.3.0.zip`：解压后运行 `War3Connect.Client.exe`，已包含 .NET 运行时。
-- `artifacts/release/War3Connect-client-linux-x64-0.3.0.tar.gz`：Linux x64 客户端，使用方法见 [Linux 客户端](docs/LINUX-CLIENT.md)。
-- `artifacts/release/War3Connect-server-0.3.0.zip`：解压后执行 `dotnet War3Connect.Server.dll`，需要 ASP.NET Core 8 Runtime。
+- `artifacts/release/War3Connect-client-win-x64-0.3.1.zip`：解压后运行 `War3Connect.Client.exe`，已包含 .NET 运行时。
+- `artifacts/release/War3Connect-client-linux-x64-0.3.1.tar.gz`：Linux x64 客户端，使用方法见 [Linux 客户端](docs/LINUX-CLIENT.md)。
+- `artifacts/release/War3Connect-server-0.3.1.zip`：解压后执行 `dotnet War3Connect.Server.dll`，需要 ASP.NET Core 8 Runtime。
 
 客户端发布包是包含 .NET 运行时的便携版；未包含 Wine、游戏、安装器、自动更新或代码签名。服务端包仍需 ASP.NET Core 8 Runtime。服务端发布时关闭平台专用 apphost，可在兼容的 Windows/Linux .NET 运行时使用同一 DLL。
 
@@ -86,7 +89,7 @@ C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平
 
 ## 公网服务器配置
 
-远程客户端强制使用 HTTPS/WSS；仅回环地址允许 HTTP/WS。请准备域名、证书和公网服务器。最简单的部署方式是在同一台服务器上运行 ASP.NET 服务和 Caddy：
+远程客户端推荐 HTTPS/WSS，也可显式选择 HTTP/WS 无证书模式。请准备域名、证书和公网服务器。最简单的部署方式是在同一台服务器上运行 ASP.NET 服务和 Caddy：
 
 ```text
 玩家客户端 → HTTPS/WSS 443 → Caddy → 127.0.0.1:5080 → 平台和中继
@@ -103,6 +106,8 @@ dotnet War3Connect.Server.dll --urls http://127.0.0.1:5080 --DataDirectory ./dat
 也提供 `deploy/Dockerfile`，从仓库根目录构建。容器内使用非 root 用户，持久化目录 `/app/data` 必须允许该用户写入。容器方案尚未在本机执行验证。
 
 服务器必须支持长时间 WebSocket 连接。不要将 `/relay/` 当作普通短连接接口设置很短的超时。账号 JSON 文件仅支持单服务实例写入，部署时备份 `data/`；服务器重启会结束当前房间和对局连接。
+
+无证书启动方法见 [部署指南](docs/DEPLOYMENT.md#可选无证书-httpws)。
 
 ## 联机实现
 
@@ -145,5 +150,5 @@ dotnet War3Connect.Server.dll --urls http://127.0.0.1:5080 --DataDirectory ./dat
 - **版本不一致**：核对完整文件版本号，不要只看“1.27”。
 - **缺少地图**：在 War3 原生主机列表中加入，等待游戏内下载；确认房主允许下载、游戏目录可写。平台不再通过地图预检查阻止加入。
 - **连接后掉线**：查看客户端日志和服务端的中继连接日志；检查网络稳定性、反向代理超时、房主是否退出平台房间。首版不支持掉线恢复。
-- **服务器不可达**：远程地址必须为可访问且证书有效的 HTTPS 地址；不要在其他电脑使用 `127.0.0.1`。
+- **服务器不可达**：HTTPS 地址需可信有效证书；HTTP 地址需启用“允许 HTTP（无证书）”并开放服务监听端口。不要在其他电脑使用 `127.0.0.1`。
 - **登录过期**：先退出账号再重新登录；同一账号在另一处登录会使之前会话失效。

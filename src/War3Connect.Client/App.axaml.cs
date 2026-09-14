@@ -27,6 +27,8 @@ public partial class App : Application
                     if (!window.FindControl<Button>("SaveServerButton")!.IsEnabled) throw new Exception("服务器保存按钮状态错误");
                     if (window.FindControl<StackPanel>("WinePanel")!.IsVisible != OperatingSystem.IsLinux()) throw new Exception("Wine 设置平台状态错误");
                     if (window.FindControl<TextBox>("MapPathBox") != null || window.FindControl<Button>("MapBrowseButton") != null) throw new Exception("界面不应要求选择地图");
+                    var allowHttp = window.FindControl<CheckBox>("AllowHttpBox")!;
+                    if (!allowHttp.IsEnabled || allowHttp.IsChecked == true != ClientConfiguration.Load(Path.Combine(AppContext.BaseDirectory, "clientsettings.json")).AllowInsecureHttp) throw new Exception("HTTP 选项默认配置错误");
                     window.UpdateLayout();
                     using var bitmap = new RenderTargetBitmap(new PixelSize((int)window.Bounds.Width, (int)window.Bounds.Height));
                     bitmap.Render(window);

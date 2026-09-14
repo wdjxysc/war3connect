@@ -16,18 +16,19 @@ public sealed class PlatformClient : IDisposable
     private readonly HttpClient _http;
     public LoginResult? Session { get; private set; }
     public Uri Address { get; }
-    public PlatformClient(string address)
+    public PlatformClient(string address, bool allowInsecureHttp = false)
     {
-        Address = ParseAddress(address);
+        Address = ParseAddress(address, allowInsecureHttp);
         _http = new() { BaseAddress = Address, Timeout = TimeSpan.FromSeconds(10) };
     }
-    public static Uri ParseAddress(string? address)
+    public static Uri ParseAddress(string? address, bool allowInsecureHttp = false)
     {
         if (string.IsNullOrWhiteSpace(address) || !Uri.TryCreate(address.Trim().TrimEnd('/') + "/", UriKind.Absolute, out var uri)
             || (uri.Scheme != "http" && uri.Scheme != "https") || uri.AbsolutePath != "/" || !string.IsNullOrEmpty(uri.UserInfo)
             || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment))
             throw new ArgumentException("请输入服务器根地址，如 https://play.example.com。");
-        if (uri.Scheme == "http" && !uri.IsLoopback) throw new ArgumentException("远程服务器必须使用 HTTPS，以保护账号和对局连接。");
+        if (uri.Scheme == "http" && !uri.IsLoopback && !allowInsecureHttp)
+            throw new ArgumentException("此地址使用未加密 HTTP。如需连接，请勾选“允许 HTTP（无证书）”；建议使用 HTTPS。");
         return uri;
     }
     public async Task LoginAsync(string username, string password, bool register, CancellationToken ct = default)

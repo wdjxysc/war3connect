@@ -55,6 +55,16 @@ try { LanProtocol.Parse(wrongVersion); throw new Exception("Wrong version accept
 Check(!Versions.IsSupported("1.26.0.6401") && !Versions.IsSupported("1.27") && Versions.IsSupported("1.27.0.52240"), "full 1.27 build required");
 try { new PlatformClient("http://example.com"); throw new Exception("Insecure remote server accepted"); } catch (ArgumentException) { checks++; }
 
+using (var httpClient = new PlatformClient("http://203.0.113.10:5080", allowInsecureHttp: true))
+    Check(httpClient.Address.Scheme == "http" && httpClient.Address.Port == 5080, "explicit opt-in permits non-loopback HTTP with custom port");
+Check(PlatformClient.ParseAddress("https://example.com", true).Scheme == "https", "HTTP opt-in preserves HTTPS addresses");
+foreach (var invalid in new[] { "ftp://example.com", "http://user:pass@example.com", "http://example.com/api", "http://example.com/?token=x" })
+{
+    try { PlatformClient.ParseAddress(invalid, true); throw new Exception("Unsafe URL accepted with HTTP opt-in"); }
+    catch (ArgumentException) { }
+}
+Check(true, "HTTP opt-in retains scheme, credentials and root-path validation");
+
 // Deterministic expiry and cleanup, without waiting for real heartbeat/session timeouts.
 var clock = new FakeClock();
 var relay = new Relay(NullLogger<Relay>.Instance, clock);
@@ -100,6 +110,14 @@ Check(true, "invalid, insecure, path-prefixed and credential-bearing server conf
 await File.WriteAllTextAsync(configPath, "{broken-json");
 try { ClientConfiguration.LoadServerUrl(configPath); throw new Exception("Malformed configuration accepted"); }
 catch (System.Text.Json.JsonException) { Check(true, "malformed client config reported"); }
+await File.WriteAllTextAsync(configPath, """{"ServerUrl":" http://203.0.113.10:5080/ ","AllowInsecureHttp":true}""");
+var httpConfig = ClientConfiguration.Load(configPath);
+Check(httpConfig.AllowInsecureHttp && httpConfig.ServerUrl == "http://203.0.113.10:5080", "explicit HTTP preference loaded and address normalized");
+await File.WriteAllTextAsync(configPath, System.Text.Json.JsonSerializer.Serialize(httpConfig));
+Check(ClientConfiguration.Load(configPath) == httpConfig, "HTTP configuration survives save and reload");
+await File.WriteAllTextAsync(configPath, """{"ServerUrl":"https://example.com"}""");
+Check(!ClientConfiguration.Load(configPath).AllowInsecureHttp, "legacy configuration keeps HTTP opt-in disabled");
+
 var fakeInstall = new GameInstallation(Path.Combine(run, "war3.exe"), "1.27.0.52240");
 File.Copy(typeof(Fixtures).Assembly.Location, fakeInstall.Executable, true);
 Check(PeVersion.Read(fakeInstall.Executable) == "1.27.0.52240", "portable PE VERSIONINFO reads full fixed file version");
@@ -136,7 +154,7 @@ try
     await Eventually(async () => { try { return (await http.GetAsync("health")).IsSuccessStatusCode; } catch (HttpRequestException) { return false; } }, "real server starts");
     using (var unauthorized = await http.GetAsync("api/rooms")) Check(unauthorized.StatusCode == HttpStatusCode.Unauthorized, "anonymous API denied");
     using var host = new PlatformClient(address);
-    using var guest = new PlatformClient(address);
+    using var guest = new PlatformClient(address, allowInsecureHttp: true);
     using var guest2 = new PlatformClient(address);
     using var outsider = new PlatformClient(address);
     await host.LoginAsync("Host", "test-password-123", true);

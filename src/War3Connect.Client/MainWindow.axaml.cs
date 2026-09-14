@@ -14,13 +14,13 @@ namespace War3Connect.Client;
 
 public partial class MainWindow : Window
 {
-    private sealed record Settings(string Server, string Username, string Game, string? Wine = null, string? WinePrefix = null);
+    private sealed record Settings(string Server, string Username, string Game, string? Wine = null, string? WinePrefix = null, bool AllowInsecureHttp = false);
     private readonly string _settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "War3Connect", "settings.json");
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(5) };
     private PlatformClient? _api;
     private RoomAgent? _agent;
     private RoomView? _room;
-    private string _defaultServerAddress = ClientConfiguration.DefaultServerUrl;
+    private ClientConfiguration _defaultConfiguration = new(ClientConfiguration.DefaultServerUrl);
     private bool _busy, _refreshing, _closing;
     public MainWindow() : this(true) { }
     public MainWindow(bool loadSettings)
@@ -29,13 +29,18 @@ public partial class MainWindow : Window
         WinePanel.IsVisible = OperatingSystem.IsLinux();
         WineBox.Text = "wine";
         LoadDefaultServerAddress();
-        ServerBox.Text = _defaultServerAddress;
+        ServerBox.Text = _defaultConfiguration.ServerUrl;
+        AllowHttpBox.IsChecked = _defaultConfiguration.AllowInsecureHttp;
         try
         {
             if (loadSettings && File.Exists(_settingsPath) && JsonSerializer.Deserialize<Settings>(File.ReadAllText(_settingsPath)) is { } s)
             {
                 WineBox.Text = s.Wine ?? "wine"; WinePrefixBox.Text = s.WinePrefix ?? ""; UsernameBox.Text = s.Username; GamePathBox.Text = s.Game;
-                if (!string.IsNullOrWhiteSpace(s.Server)) ServerBox.Text = PlatformClient.ParseAddress(s.Server).AbsoluteUri.TrimEnd('/');
+                if (!string.IsNullOrWhiteSpace(s.Server))
+                {
+                    ServerBox.Text = PlatformClient.ParseAddress(s.Server, s.AllowInsecureHttp).AbsoluteUri.TrimEnd('/');
+                    AllowHttpBox.IsChecked = s.AllowInsecureHttp;
+                }
             }
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException or ArgumentException) { AppendLog("设置读取失败，服务器地址使用默认配置：" + e.Message); }
@@ -65,7 +70,7 @@ public partial class MainWindow : Window
         LoginButton.IsEnabled = RegisterButton.IsEnabled = !_busy && !logged;
         LogoutButton.IsEnabled = !_busy && logged;
         ServerBox.IsEnabled = UsernameBox.IsEnabled = PasswordBox.IsEnabled = !logged && !_busy;
-        SaveServerButton.IsEnabled = DefaultServerButton.IsEnabled = !logged && !_busy;
+        SaveServerButton.IsEnabled = DefaultServerButton.IsEnabled = AllowHttpBox.IsEnabled = !logged && !_busy;
         CreateButton.IsEnabled = JoinButton.IsEnabled = !_busy && logged && _room == null;
         GameBrowseButton.IsEnabled = !_busy && _room == null;
     }
@@ -73,7 +78,7 @@ public partial class MainWindow : Window
     private async void RegisterClick(object sender, RoutedEventArgs e) => await Run(() => Login(true));
     private void LoadDefaultServerAddress()
     {
-        try { _defaultServerAddress = ClientConfiguration.LoadServerUrl(Path.Combine(AppContext.BaseDirectory, "clientsettings.json")); }
+        try { _defaultConfiguration = ClientConfiguration.Load(Path.Combine(AppContext.BaseDirectory, "clientsettings.json")); }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException or ArgumentException)
         { AppendLog("clientsettings.json 无效，保留可用默认地址：" + e.Message); }
     }
@@ -85,13 +90,14 @@ public partial class MainWindow : Window
     private async void DefaultServerClick(object sender, RoutedEventArgs e) => await Run(() =>
     {
         LoadDefaultServerAddress();
-        ServerBox.Text = _defaultServerAddress;
+        ServerBox.Text = _defaultConfiguration.ServerUrl;
+        AllowHttpBox.IsChecked = _defaultConfiguration.AllowInsecureHttp;
         if (SaveSettings()) StatusText.Text = "已使用并保存默认服务器地址。";
         return Task.CompletedTask;
     });
     private async Task Login(bool register)
     {
-        var api = new PlatformClient(ServerBox.Text ?? "");
+        var api = new PlatformClient(ServerBox.Text ?? "", AllowHttpBox.IsChecked == true);
         try { await api.LoginAsync((UsernameBox.Text ?? "").Trim(), (PasswordBox.Text ?? ""), register); }
         catch { api.Dispose(); throw; }
         _api?.Dispose();
@@ -246,9 +252,9 @@ public partial class MainWindow : Window
     {
         try
         {
-            var address = PlatformClient.ParseAddress(ServerBox.Text).AbsoluteUri.TrimEnd('/');
+            var address = PlatformClient.ParseAddress(ServerBox.Text, AllowHttpBox.IsChecked == true).AbsoluteUri.TrimEnd('/');
             Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
-            var content = JsonSerializer.Serialize(new Settings(address, UsernameBox.Text ?? "", GamePathBox.Text ?? "", WineBox.Text, WinePrefixBox.Text));
+            var content = JsonSerializer.Serialize(new Settings(address, UsernameBox.Text ?? "", GamePathBox.Text ?? "", WineBox.Text, WinePrefixBox.Text, AllowHttpBox.IsChecked == true));
             File.WriteAllText(_settingsPath + ".tmp", content);
             File.Move(_settingsPath + ".tmp", _settingsPath, true);
             ServerBox.Text = address;

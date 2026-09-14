@@ -8,7 +8,7 @@ Windows 和 Linux 共用 Avalonia 界面、账号和联机代理，连接同一�
 
 ```bash
 mkdir -p ~/Applications/war3connect
-tar -xzf War3Connect-client-linux-x64-0.3.0.tar.gz -C ~/Applications/war3connect
+tar -xzf War3Connect-client-linux-x64-0.3.1.tar.gz -C ~/Applications/war3connect
 cd ~/Applications/war3connect
 chmod +x War3Connect.Client
 ./War3Connect.Client
@@ -34,6 +34,8 @@ sudo apt install libx11-6 libice6 libsm6 libfontconfig1 libxcb1 libxext6 libxren
 Wine 设置随服务器、用户名和游戏路径一起保存，密码不保存。Linux 设置一般位于 `~/.local/share/War3Connect/settings.json`（遵循 .NET LocalApplicationData / XDG_DATA_HOME）；Windows 继续使用 `%LOCALAPPDATA%/War3Connect/settings.json`。
 
 平台不再访问或解析本地地图文件路径，也不保存地图路径设置；旧设置文件中的 Map 字段会被忽略。地图路径、下载和校验交给运行在 Wine 中的 War3 处理。
+
+客户端默认推荐 HTTPS；连接无证书服务器时填写 `http://服务器地址:端口` 并勾选“允许 HTTP（无证书）”。该模式不加密密码、令牌和游戏数据。
 
 ## 从源码构建
 

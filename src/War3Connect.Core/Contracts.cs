@@ -19,7 +19,7 @@ public sealed record RelayStats(int ActiveTunnels, long ForwardedBytes);
 public static class Versions
 {
     public const int ProtocolVersion = 2;
-    public const string Release = "0.3.0";
+    public const string Release = "0.3.1";
     public static bool IsSupported(string? version) => Version.TryParse(version, out var v)
         && v.Major == 1 && v.Minor == 27 && v.Build >= 0 && v.Revision >= 0;
 }

@@ -9,8 +9,10 @@
       <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <StackPanel Margin="0,0,12,0">
-          <TextBlock Text="服务器地址（远程使用 HTTPS）"/>
+          <TextBlock Text="服务器地址（推荐 HTTPS）"/>
           <TextBox x:Name="ServerBox" Margin="0"/>
+          <CheckBox x:Name="AllowHttpBox" Content="允许 HTTP（无证书）" Margin="0,4,0,0" />
+          <TextBlock Text="HTTP 不加密账号密码及对局数据，仅在可信网络使用。" FontSize="11" Foreground="#E9B66F" TextWrapping="Wrap" IsVisible="{Binding IsChecked, ElementName=AllowHttpBox}" />
           <WrapPanel Margin="0,7,0,0">
             <Button x:Name="SaveServerButton" Content="保存地址" Click="SaveServerClick" Padding="10,4" Margin="0,0,8,0"/>
             <Button x:Name="DefaultServerButton" Content="使用默认" Click="DefaultServerClick" Padding="10,4" Margin="0"/>

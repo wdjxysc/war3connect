@@ -14,7 +14,7 @@ dotnet War3Connect.Server.dll --urls http://127.0.0.1:5080 --DataDirectory /path
 
 ## 客户端配置
 
-客户端默认连接本机开发地址。用户可在界面输入管理员提供的 HTTPS 地址并保存；该地址保存到用户配置，不写回源码。
+客户端默认连接本机开发地址。用户可在界面输入管理员提供的 HTTPS 地址并保存；无证书 HTTP 地址需勾选对应开关；该地址保存到用户配置，不写回源码。
 
 如需定制默认地址，可私下修改发布目录中的 `clientsettings.json`。这种定制包会包含地址，不要再作为公开发行包上传。公网 IP 无法对实际连接它的玩家保密。
 
@@ -43,3 +43,22 @@ dotnet War3Connect.Server.dll --urls http://127.0.0.1:5080 --DataDirectory /path
 ```
 
 此验证会创建临时诊断账号并运行中继测试，结束后退出账号；随机密码不保存。
+
+
+## 可选：无证书 HTTP/WS
+
+Windows 和 Linux 均可直接运行：
+
+```bash
+dotnet War3Connect.Server.dll --urls http://0.0.0.0:5080 --DataDirectory ./data
+```
+
+这会监听所有 IPv4 网卡。仅向需要连接的网络开放防火墙或云安全组 TCP 5080。客户端填写 `http://服务器地址:5080`，勾选“允许 HTTP（无证书）”，保存后登录。不要把 `0.0.0.0` 作为客户端目标地址。
+
+HTTP 模式不需要证书或反向代理，游戏中继自动使用 WS；密码、令牌和游戏数据不加密，仅适合可信网络或临时测试。HTTPS 模式仍正常校验证书，不会自动降级。
+
+若需同时提供两种入口，可保留 HTTPS 反向代理，并单独开放 HTTP 监听端口。本项目不会自动修改已有服务器、防火墙或证书路由。
+
+```powershell
+./scripts/test-public-endpoint.ps1 -Address http://play.example.com:5080 -AllowInsecureHttp
+```
