@@ -4,7 +4,7 @@
     <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,20">
       <Border Width="48" Height="48" CornerRadius="13" Background="#E2B777" Margin="0,0,14,0"><TextBlock Text="W" FontSize="28" FontWeight="Bold" Foreground="#192131" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
       <StackPanel Grid.Column="1"><TextBlock Text="WAR3 CONNECT" FontSize="24" FontWeight="Bold"/><TextBlock x:Name="StatusText" Text="登录平台，开启一场属于朋友的对战。" Classes="muted" TextWrapping="Wrap" Margin="0,5,0,0"/></StackPanel>
-      <Border Grid.Column="2" Classes="badge" VerticalAlignment="Top"><TextBlock Text="CLASSIC TFT  /  1.27" FontSize="11" Foreground="#E2B777" /></Border>
+      <Border Grid.Column="2" Classes="badge" VerticalAlignment="Top"><TextBlock x:Name="GameBadge" Text="CLASSIC TFT  /  1.27" FontSize="11" Foreground="#E2B777" /></Border>
     </Grid>
     <Border Grid.Row="1" Classes="card" Padding="18" Margin="0,0,0,18">
       <Grid ColumnDefinitions="2*,*,*,Auto">
@@ -24,16 +24,16 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12">
             <TextBlock Text="游戏准备" FontSize="17" FontWeight="SemiBold"/>
-            <TextBlock Text="选择经典 TFT 1.27 的游戏程序。" Classes="muted" TextWrapping="Wrap"/>
+            <ComboBox x:Name="GameSelector" SelectedIndex="0" SelectionChanged="GameSelectionChanged" HorizontalAlignment="Stretch"><ComboBoxItem Content="魔兽争霸 III · 1.27"/><ComboBoxItem Content="星际争霸 · 1.16.1（准备）"/></ComboBox><TextBlock x:Name="GameDescription" Text="选择经典 TFT 1.27 的游戏程序。" Classes="muted" TextWrapping="Wrap"/>
             <TextBox x:Name="GamePathBox" IsReadOnly="True" Watermark="尚未选择 war3.exe" TextWrapping="Wrap" MinHeight="68" MaxHeight="92" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
             <Button x:Name="GameBrowseButton" Content="选择游戏目录中的 war3.exe" Click="BrowseGameClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
             <TextBlock x:Name="VersionText" Text="入房前会自动检查游戏版本。" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
             <StackPanel x:Name="WinePanel" Spacing="8"><TextBlock Text="WINE 环境" Classes="label"/><TextBox x:Name="WineBox" Watermark="wine"/><TextBox x:Name="WinePrefixBox" Watermark="WINEPREFIX（可留空）" ToolTip.Tip="独立 Wine 环境的绝对路径，留空使用环境默认值"/></StackPanel>
-            <Button Content="启动 War3" Click="LaunchClick" Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+            <Button x:Name="LaunchButton" Content="启动 War3" Click="LaunchClick" Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
             <Border Height="1" Background="#263449" Margin="0,6"/>
             <TextBlock Text="一起开局" FontWeight="SemiBold"/>
-            <TextBlock Text="01  创建或加入平台房间&#10;&#10;02  房主在 War3 局域网中建图&#10;&#10;03  玩家从游戏内主机列表加入" Classes="muted" TextWrapping="Wrap" LineHeight="19"/>
-            <Border Background="#18283A" CornerRadius="8" Padding="12"><TextBlock Text="地图由游戏内选择、下载和校验。对战期间请保持平台运行。" Foreground="#9CB3CA" FontSize="11" TextWrapping="Wrap" LineHeight="18"/></Border>
+            <TextBlock x:Name="GameSteps" Text="01  创建或加入平台房间&#10;&#10;02  房主在 War3 局域网中建图&#10;&#10;03  玩家从游戏内主机列表加入" Classes="muted" TextWrapping="Wrap" LineHeight="19"/>
+            <Border Background="#18283A" CornerRadius="8" Padding="12"><TextBlock x:Name="GameNotice" Text="地图由游戏内选择、下载和校验。对战期间请保持平台运行。" Foreground="#9CB3CA" FontSize="11" TextWrapping="Wrap" LineHeight="18"/></Border>
           </StackPanel>
         </ScrollViewer>
       </Border>
@@ -45,9 +45,9 @@
               <Grid RowDefinitions="*,Auto" Margin="0,12,0,0">
                 <Grid Margin="0,0,0,12">
                   <ListBox x:Name="RoomsList" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ListBox.ItemTemplate><DataTemplate><Border Padding="12" Margin="0,3" Background="#182538" CornerRadius="8"><StackPanel Spacing="6"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/><TextBlock Classes="muted" FontSize="11"><Run Text="{Binding HostName}"/><Run Text="  ·  TFT "/><Run Text="{Binding GameVersion}"/></TextBlock><TextBlock Text="需要房间密码" Foreground="#E2B777" FontSize="11" IsVisible="{Binding HasPassword}"/></StackPanel></Border></DataTemplate></ListBox.ItemTemplate>
+                    <ListBox.ItemTemplate><DataTemplate><Border Padding="12" Margin="0,3" Background="#182538" CornerRadius="8"><StackPanel Spacing="6"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/><TextBlock Classes="muted" FontSize="11"><Run Text="{Binding HostName}"/><Run Text="  ·  版本 "/><Run Text="{Binding GameVersion}"/></TextBlock><TextBlock Text="需要房间密码" Foreground="#E2B777" FontSize="11" IsVisible="{Binding HasPassword}"/></StackPanel></Border></DataTemplate></ListBox.ItemTemplate>
                   </ListBox>
-                  <StackPanel x:Name="EmptyRoomsPanel" IsVisible="{Binding !ItemCount, ElementName=RoomsList}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Spacing="8"><TextBlock Text="等待下一场对战" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock Text="登录后创建房间，邀请朋友一起加入。" Classes="muted" HorizontalAlignment="Center"/></StackPanel>
+                  <StackPanel x:Name="EmptyRoomsPanel" IsVisible="{Binding !ItemCount, ElementName=RoomsList}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Spacing="8"><TextBlock x:Name="EmptyRoomTitle" Text="等待下一场对战" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock x:Name="EmptyRoomHint" Text="登录后创建房间，邀请朋友一起加入。" Classes="muted" HorizontalAlignment="Center"/></StackPanel>
                 </Grid>
                 <Grid Grid.Row="1" RowDefinitions="Auto,Auto" ColumnDefinitions="*,170,Auto">
                   <TextBox x:Name="RoomNameBox" Watermark="新房间名称" Text="朋友的对战房间" MaxLength="40" Margin="0,0,8,0"/>

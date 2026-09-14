@@ -20,11 +20,11 @@ foreach ($rid in @('win-x64', 'linux-x64')) {
     if ($LASTEXITCODE -ne 0) { throw "$rid 客户端发布失败。" }
     Copy-Item -LiteralPath README.md -Destination $clientOutput
     New-Item -ItemType Directory -Path "$clientOutput/docs" -Force | Out-Null
-    Copy-Item -LiteralPath docs/LINUX-CLIENT.md -Destination "$clientOutput/docs"
+    Copy-Item -LiteralPath docs/LINUX-CLIENT.md, docs/STARCRAFT.md -Destination "$clientOutput/docs"
     if ($rid -eq 'win-x64') {
-        Compress-Archive -Path "$clientOutput/*" -DestinationPath "artifacts/release/War3Connect-client-$rid-0.3.1.zip" -Force
+        Compress-Archive -Path "$clientOutput/*" -DestinationPath "artifacts/release/War3Connect-client-$rid-0.4.0.zip" -Force
     } else {
-        tar -czf "artifacts/release/War3Connect-client-$rid-0.3.1.tar.gz" -C $clientOutput .
+        tar -czf "artifacts/release/War3Connect-client-$rid-0.4.0.tar.gz" -C $clientOutput .
         if ($LASTEXITCODE -ne 0) { throw 'Linux 打包失败。' }
     }
 }
@@ -33,6 +33,6 @@ dotnet publish src/War3Connect.Server -p:DebugType=None -p:DebugSymbols=false -c
 if ($LASTEXITCODE -ne 0) { throw '服务端发布失败。' }
 Copy-Item -LiteralPath README.md -Destination $serverOutput
 New-Item -ItemType Directory -Path "$serverOutput/docs" -Force | Out-Null
-Copy-Item -LiteralPath docs/DEPLOYMENT.md, docs/API.md -Destination "$serverOutput/docs"
-Compress-Archive -Path "$serverOutput/*" -DestinationPath artifacts/release/War3Connect-server-0.3.1.zip -Force
+Copy-Item -LiteralPath docs/DEPLOYMENT.md, docs/API.md, docs/STARCRAFT.md -Destination "$serverOutput/docs"
+Compress-Archive -Path "$serverOutput/*" -DestinationPath artifacts/release/War3Connect-server-0.4.0.zip -Force
 Write-Output "发布文件位于 $projectRoot/artifacts/release"

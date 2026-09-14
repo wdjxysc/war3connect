@@ -30,6 +30,7 @@ public partial class App : Application
                     var allowHttp = window.FindControl<CheckBox>("AllowHttpBox")!;
                     if (!allowHttp.IsEnabled || allowHttp.IsChecked == true != ClientConfiguration.Load(Path.Combine(AppContext.BaseDirectory, "clientsettings.json")).AllowInsecureHttp) throw new Exception("HTTP 选项默认配置错误");
                     window.VerifyLogControls();
+                    window.VerifyGameControls();
                     window.UpdateLayout();
                     using var bitmap = new RenderTargetBitmap(new PixelSize((int)window.Bounds.Width, (int)window.Bounds.Height));
                     bitmap.Render(window);
@@ -46,6 +47,13 @@ public partial class App : Application
                     using var logs = new RenderTargetBitmap(new PixelSize((int)window.Bounds.Width, (int)window.Bounds.Height));
                     logs.Render(window);
                     logs.Save(Path.ChangeExtension(path, "logs.png"));
+                    window.FindControl<ComboBox>("GameSelector")!.SelectedIndex = 1;
+                    window.FindControl<Button>("ClearLogButton")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                    window.FindControl<Button>("ExpandLogButton")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                    window.UpdateLayout();
+                    using var starcraft = new RenderTargetBitmap(new PixelSize((int)window.Bounds.Width, (int)window.Bounds.Height));
+                    starcraft.Render(window);
+                    starcraft.Save(Path.ChangeExtension(path, "starcraft.png"));
                     desktop.Shutdown(0);
                 }
                 catch (Exception e) { File.WriteAllText(path + ".error.txt", e.ToString()); desktop.Shutdown(1); }

@@ -3,16 +3,17 @@ using War3Connect.Core;
 
 namespace War3Connect.Agent;
 
-public sealed record GameInstallation(string Executable, string Version)
+public sealed record GameInstallation(string Executable, string Version, string GameId = GameCatalog.War3)
 {
-    public static GameInstallation Inspect(string executable)
+    public static GameInstallation Inspect(string executable, string gameId = GameCatalog.War3)
     {
+        if (!GameCatalog.IsKnown(gameId)) throw new InvalidOperationException("不支持的游戏。");
         executable = Path.GetFullPath(executable);
-        if (!File.Exists(executable) || !Path.GetFileName(executable).Equals("war3.exe", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("请选择 War3 安装目录中的 war3.exe。");
+        if (!File.Exists(executable) || !Path.GetFileName(executable).Equals(GameCatalog.Executable(gameId), StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"请选择游戏目录中的 {GameCatalog.Executable(gameId)}。");
         string exact = PeVersion.Read(executable);
-        if (!Versions.IsSupported(exact)) throw new InvalidOperationException($"检测到版本 {exact}，本版只支持经典 TFT 1.27。");
-        return new(executable, exact);
+        if (!GameCatalog.SupportsVersion(gameId, exact)) throw new InvalidOperationException($"检测到版本 {exact}，需要 {(gameId == GameCatalog.StarCraft ? "星际 1.16.1" : "经典 TFT 1.27")} 的完整版本号。");
+        return new(executable, exact, gameId);
     }
     public ProcessStartInfo CreateLaunchInfo(string? wine = null, string? winePrefix = null)
     {
@@ -24,7 +25,7 @@ public sealed record GameInstallation(string Executable, string Version)
             if (!string.IsNullOrWhiteSpace(winePrefix)) info.Environment["WINEPREFIX"] = Path.GetFullPath(winePrefix);
         }
         else info.FileName = Executable;
-        info.ArgumentList.Add("-window");
+        if (GameId == GameCatalog.War3) info.ArgumentList.Add("-window");
         return info;
     }
     public void Launch(string? wine = null, string? winePrefix = null)

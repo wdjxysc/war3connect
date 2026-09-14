@@ -1,4 +1,6 @@
-# War3 Connect 0.3.1
+# War3 Connect 0.4.0
+
+新增星际争霸 1.16.1 游戏识别、独立配置和准备房间；**星际跨网联机转发尚未接入**。详情见 [星际第一阶段](docs/STARCRAFT.md)。本版协议为 3，客户端与服务端需同步升级。
 
 C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平台内测版。
 
@@ -68,9 +70,9 @@ C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平
 
 输出：
 
-- `artifacts/release/War3Connect-client-win-x64-0.3.1.zip`：解压后运行 `War3Connect.Client.exe`，已包含 .NET 运行时。
-- `artifacts/release/War3Connect-client-linux-x64-0.3.1.tar.gz`：Linux x64 客户端，使用方法见 [Linux 客户端](docs/LINUX-CLIENT.md)。
-- `artifacts/release/War3Connect-server-0.3.1.zip`：解压后执行 `dotnet War3Connect.Server.dll`，需要 ASP.NET Core 8 Runtime。
+- `artifacts/release/War3Connect-client-win-x64-0.4.0.zip`：解压后运行 `War3Connect.Client.exe`，已包含 .NET 运行时。
+- `artifacts/release/War3Connect-client-linux-x64-0.4.0.tar.gz`：Linux x64 客户端，使用方法见 [Linux 客户端](docs/LINUX-CLIENT.md)。
+- `artifacts/release/War3Connect-server-0.4.0.zip`：解压后执行 `dotnet War3Connect.Server.dll`，需要 ASP.NET Core 8 Runtime。
 
 客户端发布包是包含 .NET 运行时的便携版；未包含 Wine、游戏、安装器、自动更新或代码签名。服务端包仍需 ASP.NET Core 8 Runtime。服务端发布时关闭平台专用 apphost，可在兼容的 Windows/Linux .NET 运行时使用同一 DLL。
 

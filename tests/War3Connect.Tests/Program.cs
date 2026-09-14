@@ -53,6 +53,8 @@ Check(true, "all truncated packet boundaries rejected");
 var wrongVersion = packet.ToArray(); wrongVersion[8] = 26;
 try { LanProtocol.Parse(wrongVersion); throw new Exception("Wrong version accepted"); } catch (InvalidDataException) { checks++; }
 Check(!Versions.IsSupported("1.26.0.6401") && !Versions.IsSupported("1.27") && Versions.IsSupported("1.27.0.52240"), "full 1.27 build required");
+Check(GameCatalog.SupportsVersion(GameCatalog.StarCraft, "1.16.1.1") && !GameCatalog.SupportsVersion(GameCatalog.StarCraft, "1.16.1")
+    && !GameCatalog.SupportsVersion(GameCatalog.StarCraft, "1.18.0.0") && !GameCatalog.SupportsVersion("unknown", "1.16.1.1"), "StarCraft exact build and known game required");
 try { new PlatformClient("http://example.com"); throw new Exception("Insecure remote server accepted"); } catch (ArgumentException) { checks++; }
 
 using (var httpClient = new PlatformClient("http://203.0.113.10:5080", allowInsecureHttp: true))
@@ -123,6 +125,23 @@ File.Copy(typeof(Fixtures).Assembly.Location, fakeInstall.Executable, true);
 Check(PeVersion.Read(fakeInstall.Executable) == "1.27.0.52240", "portable PE VERSIONINFO reads full fixed file version");
 var inspected = GameInstallation.Inspect(fakeInstall.Executable);
 Check(inspected.Version == fakeInstall.Version && !Directory.Exists(Path.Combine(run, "Maps")), "game inspection requires no map file or Maps directory");
+var starExe = Path.Combine(run, "StarCraft.exe");
+var starBytes = File.ReadAllBytes(fakeInstall.Executable);
+byte[] fixedVersion = [0xBD, 0x04, 0xEF, 0xFE, 0, 0, 1, 0, 27, 0, 1, 0, 0x10, 0xCC, 0, 0];
+int versionOffset = -1;
+using var fixtureReader = new System.Reflection.PortableExecutable.PEReader(new MemoryStream(starBytes));
+var resources = fixtureReader.PEHeaders.SectionHeaders.Single(s => s.Name == ".rsrc");
+for (int i = resources.PointerToRawData; i <= resources.PointerToRawData + resources.SizeOfRawData - fixedVersion.Length; i++)
+    if (starBytes.AsSpan(i, fixedVersion.Length).SequenceEqual(fixedVersion)) { versionOffset = i; break; }
+if (versionOffset < 0) throw new Exception("PE fixture version resource missing");
+System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(starBytes.AsSpan(versionOffset + 8), 0x00010010);
+System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(starBytes.AsSpan(versionOffset + 12), 0x00010001);
+File.WriteAllBytes(starExe, starBytes);
+var starInstall = GameInstallation.Inspect(starExe, GameCatalog.StarCraft);
+Check(starInstall.Version == "1.16.1.1" && starInstall.GameId == GameCatalog.StarCraft, "StarCraft PE version inspection");
+Check(!starInstall.CreateLaunchInfo().ArgumentList.Contains("-window"), "StarCraft does not inherit War3 launch arguments");
+try { GameInstallation.Inspect(starExe); throw new Exception("StarCraft accepted as War3"); }
+catch (InvalidOperationException) { Check(true, "wrong executable rejected for selected game"); }
 var oldHealth = System.Text.Json.JsonSerializer.Deserialize<HealthView>("""{"Status":"ok","Version":"0.1.0"}""")!;
 try { PlatformClient.RequireCompatibleServer(oldHealth); throw new Exception("Old map-checking server accepted"); }
 catch (InvalidOperationException e) { Check(e.Message.Contains("同步更新"), "old map-checking server rejected with upgrade guidance"); }
@@ -167,7 +186,27 @@ try
     await Reject(() => duplicate.LoginAsync("Host", "wrong-password", false), HttpStatusCode.Unauthorized, "wrong password rejected");
     string accountsFile = await File.ReadAllTextAsync(Path.Combine(run, "data", "accounts.json"));
     Check(!accountsFile.Contains("test-password-123") && accountsFile.Contains("Salt"), "accounts persist only salted password hashes");
+    await Reject(() => host.Post<RoomView>("api/rooms", new CreateRoom("SC", "", "1.16.1.1", 9, GameCatalog.StarCraft)), HttpStatusCode.BadRequest, "StarCraft eight-player limit enforced");
+    var scRoom = await host.Post<RoomView>("api/rooms", new CreateRoom("SC preparation", "", "1.16.1.1", GameId: GameCatalog.StarCraft));
+    var scGuest = await guest.Post<RoomView>($"api/rooms/{scRoom.Id}/join", new JoinRoom("", "1.16.1.1", GameCatalog.StarCraft));
+    Check(scGuest.GameId == GameCatalog.StarCraft && scGuest.Members.Length == 2, "StarCraft game ID survives HTTP create and join");
+    await Reject(() => guest2.Post<RoomView>($"api/rooms/{scRoom.Id}/join", new JoinRoom("", "1.16.1.2", GameCatalog.StarCraft)), HttpStatusCode.Conflict, "StarCraft different builds isolated");
+    await Reject(() => host.Post($"api/rooms/{scRoom.Id}/game", new PublishGame(Convert.ToBase64String(packet))), HttpStatusCode.Conflict, "StarCraft cannot publish War3 advertisements");
+    await Reject(() => guest.Post<TunnelView>($"api/rooms/{scRoom.Id}/tunnels", new { }), HttpStatusCode.Conflict, "StarCraft cannot create War3 tunnel");
+    await Reject(() => host.Get<TunnelView[]>($"api/rooms/{scRoom.Id}/tunnels"), HttpStatusCode.Conflict, "StarCraft cannot poll War3 tunnels");
+    var scUpdate = new TaskCompletionSource<RoomView>(TaskCreationOptions.RunContinuationsAsynchronously);
+    await using (var scAgent = new RoomAgent(guest, scGuest))
+    {
+        scAgent.Updated += r => { if (r.Messages.Any(m => m.Text == "SC preparation chat")) scUpdate.TrySetResult(r); };
+        scAgent.Start();
+        await host.Post($"api/rooms/{scRoom.Id}/chat", new SendChat("SC preparation chat"));
+        var state = await scUpdate.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Check(state.GameId == GameCatalog.StarCraft && scAgent.LocalPort == 0 && scAgent.ActiveConnections == 0, "StarCraft room heartbeat and chat work without fake game proxy");
+    }
+    await host.Post($"api/rooms/{scRoom.Id}/leave");
+    await Reject(() => guest.Get<RoomView>($"api/rooms/{scRoom.Id}"), HttpStatusCode.NotFound, "StarCraft preparation room cleanup");
     var room = await host.Post<RoomView>("api/rooms", new CreateRoom("Integration", "room-key", fakeInstall.Version, 3));
+    await Reject(() => outsider.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version, GameCatalog.StarCraft)), HttpStatusCode.Conflict, "cross-game room join rejected even with matching version");
     await Reject(() => guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("bad", fakeInstall.Version)), HttpStatusCode.Forbidden, "room password enforced");
     await Reject(() => guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", "1.27.1.7085")), HttpStatusCode.Conflict, "1.27a and 1.27b isolated");
     var joined = await guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version));

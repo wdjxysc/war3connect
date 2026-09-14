@@ -12,6 +12,7 @@ public sealed class RoomAgent : IAsyncDisposable
     private readonly PlatformClient _api;
     private readonly string _room;
     private readonly bool _host;
+    private readonly bool _preparationOnly;
     private readonly CancellationTokenSource _stop = new();
     private readonly ConcurrentDictionary<long, Task> _connections = new();
     private readonly HashSet<string> _accepted = [];
@@ -34,10 +35,18 @@ public sealed class RoomAgent : IAsyncDisposable
         _api = api;
         _room = room.Id;
         _host = room.HostId == api.Session?.UserId;
+        if (!GameCatalog.IsKnown(room.GameId)) throw new InvalidOperationException("不支持的房间游戏。");
+        _preparationOnly = room.GameId == GameCatalog.StarCraft;
     }
     public void Start()
     {
         if (_loops.Count > 0) throw new InvalidOperationException("代理已经启动。");
+        if (_preparationOnly)
+        {
+            Emit("已进入星际准备房间，仅提供成员和聊天；游戏联机转发尚未接入。");
+            _loops.Add(RefreshRoom());
+            return;
+        }
         if (!_host)
         {
             _listener = new TcpListener(IPAddress.Loopback, 0);
@@ -61,7 +70,7 @@ public sealed class RoomAgent : IAsyncDisposable
             {
                 var room = await _api.Get<RoomView>($"api/rooms/{_room}", _stop.Token);
                 Updated?.Invoke(room);
-                if (!_host)
+                if (!_host && !_preparationOnly)
                 {
                     if (room.Game == null) await RemoveAdvertisement();
                     else

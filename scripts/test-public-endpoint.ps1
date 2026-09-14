@@ -23,9 +23,17 @@ function Send-Api($Path, $Body, $Session) {
 try {
     $health = Invoke-RestMethod -Uri ($Address + '/health') -TimeoutSec 15
     if ($health.status -ne 'ok') { throw '健康检查失败。' }
-    if ($health.protocolVersion -ne 2) { throw '请先部署支持原生地图流程的 0.3.0 服务端。' }
+    if ($health.protocolVersion -ne 3) { throw '请先部署协议 3 的 0.4.0 服务端。' }
     $probeHost = Send-Api '/api/register' @{username="probeH_$suffix"; password=[Guid]::NewGuid().ToString('N')} $null
     $probeGuest = Send-Api '/api/register' @{username="probeG_$suffix"; password=[Guid]::NewGuid().ToString('N')} $null
+    $scRoom = Send-Api '/api/rooms' @{name="SC验证_$suffix";password='';gameVersion='1.16.1.1';gameId='starcraft-bw';capacity=2} $probeHost
+    $scJoined = Send-Api "/api/rooms/$($scRoom.id)/join" @{password='';gameVersion='1.16.1.1';gameId='starcraft-bw'} $probeGuest
+    if ($scJoined.gameId -ne 'starcraft-bw' -or $scJoined.members.Count -ne 2) { throw '星际准备房间验证失败。' }
+    $null = Send-Api "/api/rooms/$($scRoom.id)/chat" @{text='星际准备房间部署验证'} $probeGuest
+    $scState = Invoke-RestMethod -Uri "$Address/api/rooms/$($scRoom.id)" -Headers @{Authorization=('Bearer ' + $probeHost.token)} -TimeoutSec 15
+    if ($scState.messages.Count -ne 1) { throw '星际准备房间聊天验证失败。' }
+    $null = Send-Api "/api/rooms/$($scRoom.id)/leave" @{} $probeHost
+    Write-Output 'PASS: StarCraft preparation room, membership and chat'
     $room = Send-Api '/api/rooms' @{name="部署验证_$suffix";password='';gameVersion='1.27.0.52240';capacity=2} $probeHost
     $null = Send-Api "/api/rooms/$($room.id)/join" @{password='';gameVersion='1.27.0.52240'} $probeGuest
     $packet = [System.IO.MemoryStream]::new()

@@ -40,7 +40,7 @@ public sealed class PlatformClient : IDisposable
     public static void RequireCompatibleServer(HealthView health)
     {
         if (health.ProtocolVersion != Versions.ProtocolVersion)
-            throw new InvalidOperationException("客户端与服务端版本不兼容。原生地图流程需要同步更新客户端和服务端至 0.3.0 或兼容版本。");
+            throw new InvalidOperationException($"客户端与服务端协议不兼容（需要 {Versions.ProtocolVersion}，服务端为 {health.ProtocolVersion}），请同步更新客户端和服务端。");
     }
     public async Task<T> Get<T>(string path, CancellationToken ct = default)
     {
