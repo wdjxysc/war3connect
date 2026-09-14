@@ -86,6 +86,22 @@ RejectDirect(() => platform.Authorize(context), 401, "new login revokes old sess
 string root = Directory.GetCurrentDirectory();
 string run = Path.Combine(root, "artifacts", "tests", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(run);
+string configPath = Path.Combine(run, "clientsettings.json");
+Check(ClientConfiguration.LoadServerUrl(configPath) == "http://127.0.0.1:5080", "missing client config uses public endpoint");
+await File.WriteAllTextAsync(configPath, """{"serverUrl":"  https://example.com:8443/  "}""");
+Check(ClientConfiguration.LoadServerUrl(configPath) == "https://example.com:8443", "client config supports custom port and normalizes whitespace");
+await File.WriteAllTextAsync(configPath, """{"ServerUrl":"http://127.0.0.1:15080"}""");
+Check(ClientConfiguration.LoadServerUrl(configPath) == "http://127.0.0.1:15080", "client config supports local development and SSH tunnel");
+foreach (var invalid in new[] { "", "http://203.0.113.10", "https://example.com/api", "https://user:password@example.com" })
+{
+    await File.WriteAllTextAsync(configPath, System.Text.Json.JsonSerializer.Serialize(new { ServerUrl = invalid }));
+    try { ClientConfiguration.LoadServerUrl(configPath); throw new Exception("Unsafe client config accepted"); }
+    catch (ArgumentException) { }
+}
+Check(true, "invalid, insecure, path-prefixed and credential-bearing server configs rejected");
+await File.WriteAllTextAsync(configPath, "{broken-json");
+try { ClientConfiguration.LoadServerUrl(configPath); throw new Exception("Malformed configuration accepted"); }
+catch (System.Text.Json.JsonException) { Check(true, "malformed client config reported"); }
 Directory.CreateDirectory(Path.Combine(run, "Maps"));
 string mapPath = Path.Combine(run, "Maps", "fixture.w3x");
 await File.WriteAllBytesAsync(mapPath, "test-map-content"u8.ToArray());

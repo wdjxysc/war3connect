@@ -18,13 +18,17 @@ public sealed class PlatformClient : IDisposable
     public Uri Address { get; }
     public PlatformClient(string address)
     {
-        if (!Uri.TryCreate(address.TrimEnd('/') + "/", UriKind.Absolute, out var uri)
+        Address = ParseAddress(address);
+        _http = new() { BaseAddress = Address, Timeout = TimeSpan.FromSeconds(10) };
+    }
+    public static Uri ParseAddress(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address) || !Uri.TryCreate(address.Trim().TrimEnd('/') + "/", UriKind.Absolute, out var uri)
             || (uri.Scheme != "http" && uri.Scheme != "https") || uri.AbsolutePath != "/" || !string.IsNullOrEmpty(uri.UserInfo)
             || !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment))
             throw new ArgumentException("请输入服务器根地址，如 https://play.example.com。");
         if (uri.Scheme == "http" && !uri.IsLoopback) throw new ArgumentException("远程服务器必须使用 HTTPS，以保护账号和对局连接。");
-        Address = uri;
-        _http = new() { BaseAddress = uri, Timeout = TimeSpan.FromSeconds(10) };
+        return uri;
     }
     public async Task LoginAsync(string username, string password, bool register, CancellationToken ct = default)
     {

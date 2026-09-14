@@ -23,6 +23,10 @@ public partial class App : Application
             {
                 if (window.FindName("CreateButton") is not Button create || create.IsEnabled)
                     throw new InvalidOperationException("未登录时创建按钮应被禁用。");
+                if (window.FindName("ServerBox") is not TextBox server || server.Text != War3Connect.Agent.ClientConfiguration.LoadServerUrl(Path.Combine(AppContext.BaseDirectory, "clientsettings.json")))
+                    throw new InvalidOperationException("默认服务器配置未加载到界面。");
+                if (window.FindName("SaveServerButton") is not Button saveServer || !saveServer.IsEnabled)
+                    throw new InvalidOperationException("登录前应能保存服务器地址。");
                 window.UpdateLayout();
                 var bitmap = new RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 bitmap.Render(window);

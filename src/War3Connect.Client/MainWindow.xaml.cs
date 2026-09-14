@@ -18,16 +18,22 @@ public partial class MainWindow : Window
     private PlatformClient? _api;
     private RoomAgent? _agent;
     private RoomView? _room;
+    private string _defaultServerAddress = ClientConfiguration.DefaultServerUrl;
     private bool _busy, _refreshing, _closing;
     public MainWindow(bool loadSettings = true)
     {
         InitializeComponent();
+        LoadDefaultServerAddress();
+        ServerBox.Text = _defaultServerAddress;
         try
         {
             if (loadSettings && File.Exists(_settingsPath) && JsonSerializer.Deserialize<Settings>(File.ReadAllText(_settingsPath)) is { } s)
-            { ServerBox.Text = s.Server; UsernameBox.Text = s.Username; GamePathBox.Text = s.Game; MapPathBox.Text = s.Map; }
+            {
+                UsernameBox.Text = s.Username; GamePathBox.Text = s.Game; MapPathBox.Text = s.Map;
+                if (!string.IsNullOrWhiteSpace(s.Server)) ServerBox.Text = PlatformClient.ParseAddress(s.Server).AbsoluteUri.TrimEnd('/');
+            }
         }
-        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException) { AppendLog("设置读取失败：" + e.Message); }
+        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException or ArgumentException) { AppendLog("设置读取失败，服务器地址使用默认配置：" + e.Message); }
         _timer.Tick += async (_, _) =>
         {
             if (_api?.Session != null && !_busy && !_refreshing)
@@ -54,11 +60,30 @@ public partial class MainWindow : Window
         LoginButton.IsEnabled = RegisterButton.IsEnabled = !_busy && !logged;
         LogoutButton.IsEnabled = !_busy && logged;
         ServerBox.IsEnabled = UsernameBox.IsEnabled = PasswordBox.IsEnabled = !logged && !_busy;
+        SaveServerButton.IsEnabled = DefaultServerButton.IsEnabled = !logged && !_busy;
         CreateButton.IsEnabled = JoinButton.IsEnabled = !_busy && logged && _room == null;
         GameBrowseButton.IsEnabled = MapBrowseButton.IsEnabled = !_busy && _room == null;
     }
     private async void LoginClick(object sender, RoutedEventArgs e) => await Run(() => Login(false));
     private async void RegisterClick(object sender, RoutedEventArgs e) => await Run(() => Login(true));
+    private void LoadDefaultServerAddress()
+    {
+        try { _defaultServerAddress = ClientConfiguration.LoadServerUrl(Path.Combine(AppContext.BaseDirectory, "clientsettings.json")); }
+        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException or ArgumentException)
+        { AppendLog("clientsettings.json 无效，保留可用默认地址：" + e.Message); }
+    }
+    private async void SaveServerClick(object sender, RoutedEventArgs e) => await Run(() =>
+    {
+        if (SaveSettings()) StatusText.Text = "服务器地址已保存，下次启动自动使用。";
+        return Task.CompletedTask;
+    });
+    private async void DefaultServerClick(object sender, RoutedEventArgs e) => await Run(() =>
+    {
+        LoadDefaultServerAddress();
+        ServerBox.Text = _defaultServerAddress;
+        if (SaveSettings()) StatusText.Text = "已使用并保存默认服务器地址。";
+        return Task.CompletedTask;
+    });
     private async Task Login(bool register)
     {
         var api = new PlatformClient(ServerBox.Text);
@@ -217,14 +242,20 @@ public partial class MainWindow : Window
         await _api.Post($"api/rooms/{_room.Id}/chat", new SendChat(text));
         ChatBox.Clear();
     }
-    private void SaveSettings()
+    private bool SaveSettings()
     {
         try
         {
+            var address = PlatformClient.ParseAddress(ServerBox.Text).AbsoluteUri.TrimEnd('/');
             Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
-            File.WriteAllText(_settingsPath, JsonSerializer.Serialize(new Settings(ServerBox.Text, UsernameBox.Text, GamePathBox.Text, MapPathBox.Text)));
+            var content = JsonSerializer.Serialize(new Settings(address, UsernameBox.Text, GamePathBox.Text, MapPathBox.Text));
+            File.WriteAllText(_settingsPath + ".tmp", content);
+            File.Move(_settingsPath + ".tmp", _settingsPath, true);
+            ServerBox.Text = address;
+            return true;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { AppendLog("无法保存设置：" + e.Message); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
+        { StatusText.Text = "无法保存设置：" + e.Message; AppendLog(StatusText.Text); return false; }
     }
     private void AppendLog(string message)
     {

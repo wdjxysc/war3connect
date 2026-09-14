@@ -8,7 +8,14 @@
     <GroupBox DockPanel.Dock="Top" Header="账号与服务器" Margin="0,0,0,14" Padding="14">
       <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <StackPanel Margin="0,0,12,0"><TextBlock Text="服务器地址（远程使用 HTTPS）"/><TextBox x:Name="ServerBox" Text="http://127.0.0.1:5080" Margin="0"/></StackPanel>
+        <StackPanel Margin="0,0,12,0">
+          <TextBlock Text="服务器地址（远程使用 HTTPS）"/>
+          <TextBox x:Name="ServerBox" Margin="0"/>
+          <WrapPanel Margin="0,7,0,0">
+            <Button x:Name="SaveServerButton" Content="保存地址" Click="SaveServerClick" Padding="10,4" Margin="0,0,8,0"/>
+            <Button x:Name="DefaultServerButton" Content="使用默认" Click="DefaultServerClick" Padding="10,4" Margin="0"/>
+          </WrapPanel>
+        </StackPanel>
         <StackPanel Grid.Column="1" Margin="0,0,12,0"><TextBlock Text="用户名"/><TextBox x:Name="UsernameBox" MaxLength="20" Margin="0"/></StackPanel>
         <StackPanel Grid.Column="2" Margin="0,0,12,0"><TextBlock Text="密码（至少 8 位）"/><PasswordBox x:Name="PasswordBox" MaxLength="128" Margin="0"/></StackPanel>
         <StackPanel Grid.Column="3"><TextBlock x:Name="AccountText" Text="未登录" Foreground="#91A3B6"/><WrapPanel><Button x:Name="LoginButton" Content="登录" Click="LoginClick" Margin="0,0,8,0"/><Button x:Name="RegisterButton" Content="注册" Click="RegisterClick" Margin="0,0,8,0"/><Button x:Name="LogoutButton" Content="退出账号" Click="LogoutClick" IsEnabled="False" Margin="0"/></WrapPanel></StackPanel>
