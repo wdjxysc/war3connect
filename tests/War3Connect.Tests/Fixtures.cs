@@ -52,6 +52,7 @@ internal sealed class FakeGame : IAsyncDisposable
     private readonly List<Task> _echoes = [];
     private readonly Task _discover, _accept;
     public volatile bool Advertising = true;
+    public volatile string MapPath = "Maps\\fixture.w3x";
     public byte[]? LastProxyAnnouncement;
     public ushort Port { get; }
     public FakeGame()
@@ -69,7 +70,7 @@ internal sealed class FakeGame : IAsyncDisposable
             {
                 var received = await _udp.ReceiveAsync(_stop.Token);
                 if (received.Buffer.Length >= 4 && received.Buffer[1] == 0x2f && Advertising)
-                    await _udp.SendAsync(Fixtures.Announcement(Port), received.RemoteEndPoint, _stop.Token);
+                    await _udp.SendAsync(Fixtures.Announcement(Port, MapPath), received.RemoteEndPoint, _stop.Token);
                 if (received.Buffer.Length >= 4 && received.Buffer[1] == 0x30) LastProxyAnnouncement = received.Buffer;
             }
         }

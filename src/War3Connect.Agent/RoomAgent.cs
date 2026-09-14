@@ -10,7 +10,6 @@ namespace War3Connect.Agent;
 public sealed class RoomAgent : IAsyncDisposable
 {
     private readonly PlatformClient _api;
-    private readonly GameInstallation _installation;
     private readonly string _room;
     private readonly bool _host;
     private readonly CancellationTokenSource _stop = new();
@@ -30,12 +29,11 @@ public sealed class RoomAgent : IAsyncDisposable
     public int ActiveConnections => Volatile.Read(ref _activeConnections);
     public int LocalPort => _listener == null ? 0 : ((IPEndPoint)_listener.LocalEndpoint).Port;
 
-    public RoomAgent(PlatformClient api, RoomView room, GameInstallation installation)
+    public RoomAgent(PlatformClient api, RoomView room)
     {
         _api = api;
         _room = room.Id;
         _host = room.HostId == api.Session?.UserId;
-        _installation = installation;
     }
     public void Start()
     {
@@ -57,7 +55,6 @@ public sealed class RoomAgent : IAsyncDisposable
     }
     private async Task RefreshRoom()
     {
-        string? verifiedMap = null;
         while (!_stop.IsCancellationRequested)
         {
             try
@@ -70,13 +67,6 @@ public sealed class RoomAgent : IAsyncDisposable
                     else
                     {
                         var game = LanProtocol.Parse(Convert.FromBase64String(room.Game.Packet));
-                        string mapIdentity = $"{game.MapPath}:{File.GetLastWriteTimeUtc(_installation.MapFile).Ticks}";
-                        if (mapIdentity != verifiedMap)
-                        {
-                            if (!await _installation.MatchesAdvertisement(game, _stop.Token))
-                                throw new InvalidDataException($"请将一致的地图放到游戏目录的 {game.MapPath} 后重新加入。");
-                            verifiedMap = mapIdentity;
-                        }
                         if (_advertisedCounter != null && _advertisedCounter != game.HostCounter) await RemoveAdvertisement();
                         await Announce(LanProtocol.WithPort(game, (ushort)LocalPort));
                         _advertisedCounter = game.HostCounter;
@@ -100,7 +90,7 @@ public sealed class RoomAgent : IAsyncDisposable
     private async Task Discover()
     {
         using var udp = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
-        string? verified = null;
+        string? loggedGame = null;
         while (!_stop.IsCancellationRequested)
         {
             try
@@ -111,12 +101,10 @@ public sealed class RoomAgent : IAsyncDisposable
                 var received = await udp.ReceiveAsync(timeout.Token);
                 if (!IPAddress.IsLoopback(received.RemoteEndPoint.Address) || received.RemoteEndPoint.Port != LanProtocol.DiscoveryPort) continue;
                 var game = LanProtocol.Parse(received.Buffer);
-                string identity = $"{game.HostCounter}:{game.EntryKey}:{game.MapPath}:{File.GetLastWriteTimeUtc(_installation.MapFile).Ticks}";
-                if (identity != verified)
+                string identity = $"{game.HostCounter}:{game.EntryKey}:{game.MapPath}";
+                if (identity != loggedGame)
                 {
-                    if (!await _installation.MatchesAdvertisement(game, _stop.Token))
-                        throw new InvalidDataException("当前游戏地图与平台房间选择的文件不一致，请重新建图。");
-                    verified = identity;
+                    loggedGame = identity;
                     Emit($"发现游戏：{game.Name}，地图：{game.MapPath}。");
                 }
                 Volatile.Write(ref _localGame, game);

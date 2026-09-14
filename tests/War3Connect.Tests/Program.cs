@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Net.WebSockets;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using War3Connect.Agent;
@@ -62,10 +61,9 @@ var relay = new Relay(NullLogger<Relay>.Instance, clock);
 var platform = new Platform(relay, clock);
 var hostUser = new Account("host", "Host", "", "");
 var guestUser = new Account("guest", "Guest", "", "");
-var mapHash = new string('A', 64);
-var request = new CreateRoom("Test", "", "1.27.0.52240", "fixture.w3x", mapHash);
+var request = new CreateRoom("Test", "", "1.27.0.52240");
 var directRoom = platform.Create(hostUser, request);
-platform.Join(guestUser, directRoom.Id, new("", request.GameVersion, mapHash));
+platform.Join(guestUser, directRoom.Id, new("", request.GameVersion));
 platform.Publish(hostUser, directRoom.Id, new(Convert.ToBase64String(packet)));
 platform.CreateTunnel(guestUser, directRoom.Id);
 clock.Advance(9);
@@ -87,7 +85,7 @@ string root = Directory.GetCurrentDirectory();
 string run = Path.Combine(root, "artifacts", "tests", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(run);
 string configPath = Path.Combine(run, "clientsettings.json");
-Check(ClientConfiguration.LoadServerUrl(configPath) == "http://127.0.0.1:5080", "missing client config uses public endpoint");
+Check(ClientConfiguration.LoadServerUrl(configPath) == "http://127.0.0.1:5080", "missing client config uses local development endpoint");
 await File.WriteAllTextAsync(configPath, """{"serverUrl":"  https://example.com:8443/  "}""");
 Check(ClientConfiguration.LoadServerUrl(configPath) == "https://example.com:8443", "client config supports custom port and normalizes whitespace");
 await File.WriteAllTextAsync(configPath, """{"ServerUrl":"http://127.0.0.1:15080"}""");
@@ -102,26 +100,20 @@ Check(true, "invalid, insecure, path-prefixed and credential-bearing server conf
 await File.WriteAllTextAsync(configPath, "{broken-json");
 try { ClientConfiguration.LoadServerUrl(configPath); throw new Exception("Malformed configuration accepted"); }
 catch (System.Text.Json.JsonException) { Check(true, "malformed client config reported"); }
-Directory.CreateDirectory(Path.Combine(run, "Maps"));
-string mapPath = Path.Combine(run, "Maps", "fixture.w3x");
-await File.WriteAllBytesAsync(mapPath, "test-map-content"u8.ToArray());
-string hash = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(mapPath)));
-var fakeInstall = new GameInstallation(Path.Combine(run, "war3.exe"), "1.27.0.52240", mapPath, hash);
+var fakeInstall = new GameInstallation(Path.Combine(run, "war3.exe"), "1.27.0.52240");
 File.Copy(typeof(Fixtures).Assembly.Location, fakeInstall.Executable, true);
 Check(PeVersion.Read(fakeInstall.Executable) == "1.27.0.52240", "portable PE VERSIONINFO reads full fixed file version");
-var inspected = await GameInstallation.Inspect(fakeInstall.Executable, mapPath);
-Check(inspected.MapHash == hash && inspected.Version == fakeInstall.Version, "portable game inspection validates PE version and map hash");
-Check(GamePaths.ResolveMap(run, "maps\\FIXTURE.W3X") == mapPath, "Windows map paths resolve case-insensitively");
-Check(new[] { "Maps/../fixture.w3x", "/Maps/fixture.w3x", "C:/Maps/fixture.w3x", "Maps//fixture.w3x" }.All(p => GamePaths.ResolveMap(run, p) == null), "unsafe map paths rejected");
+var inspected = GameInstallation.Inspect(fakeInstall.Executable);
+Check(inspected.Version == fakeInstall.Version && !Directory.Exists(Path.Combine(run, "Maps")), "game inspection requires no map file or Maps directory");
+var oldHealth = System.Text.Json.JsonSerializer.Deserialize<HealthView>("""{"Status":"ok","Version":"0.1.0"}""")!;
+try { PlatformClient.RequireCompatibleServer(oldHealth); throw new Exception("Old map-checking server accepted"); }
+catch (InvalidOperationException e) { Check(e.Message.Contains("同步更新"), "old map-checking server rejected with upgrade guidance"); }
 var launch = fakeInstall.CreateLaunchInfo("/custom wine/bin/wine", Path.Combine(run, "wine prefix"));
 Check(!launch.UseShellExecute && launch.ArgumentList.Last() == "-window", "launch uses separate arguments without a shell");
 if (OperatingSystem.IsLinux())
 {
     Check(launch.FileName == "/custom wine/bin/wine" && launch.ArgumentList[0] == fakeInstall.Executable && launch.Environment["WINEPREFIX"] == Path.Combine(run, "wine prefix"), "Linux Wine program, game path and prefix preserved");
-    var clash = Path.Combine(run, "Maps", "FIXTURE.W3X");
-    File.WriteAllText(clash, "different map");
-    Check(GamePaths.ResolveMap(run, "Maps/fixture.w3x") == null, "Linux ambiguous case variants rejected");
-    File.Delete(clash);
+
 }
 else Check(launch.FileName == fakeInstall.Executable && launch.ArgumentList.Count == 1, "Windows launches game directly");
 var invalidPe = Path.Combine(run, "invalid.exe");
@@ -157,22 +149,22 @@ try
     await Reject(() => duplicate.LoginAsync("Host", "wrong-password", false), HttpStatusCode.Unauthorized, "wrong password rejected");
     string accountsFile = await File.ReadAllTextAsync(Path.Combine(run, "data", "accounts.json"));
     Check(!accountsFile.Contains("test-password-123") && accountsFile.Contains("Salt"), "accounts persist only salted password hashes");
-    var room = await host.Post<RoomView>("api/rooms", new CreateRoom("Integration", "room-key", fakeInstall.Version, "fixture.w3x", hash, 3));
-    await Reject(() => guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("bad", fakeInstall.Version, hash)), HttpStatusCode.Forbidden, "room password enforced");
-    await Reject(() => guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", "1.27.1.7085", hash)), HttpStatusCode.Conflict, "1.27a and 1.27b isolated");
-    await Reject(() => guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version, mapHash)), HttpStatusCode.Conflict, "map mismatch rejected");
-    var joined = await guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version, hash));
-    var joined2 = await guest2.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version, hash));
-    await Reject(() => outsider.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version, hash)), HttpStatusCode.Conflict, "room capacity enforced");
+    var room = await host.Post<RoomView>("api/rooms", new CreateRoom("Integration", "room-key", fakeInstall.Version, 3));
+    await Reject(() => guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("bad", fakeInstall.Version)), HttpStatusCode.Forbidden, "room password enforced");
+    await Reject(() => guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", "1.27.1.7085")), HttpStatusCode.Conflict, "1.27a and 1.27b isolated");
+    var joined = await guest.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version));
+    var joined2 = await guest2.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version));
+    await Reject(() => outsider.Post<RoomView>($"api/rooms/{room.Id}/join", new JoinRoom("room-key", fakeInstall.Version)), HttpStatusCode.Conflict, "room capacity enforced");
     await Reject(() => outsider.Get<RoomView>($"api/rooms/{room.Id}"), HttpStatusCode.Forbidden, "outsider cannot read private room state");
     await Reject(() => guest.Post($"api/rooms/{room.Id}/game", new PublishGame(Convert.ToBase64String(packet))), HttpStatusCode.Forbidden, "only host can publish game");
     await host.Post($"api/rooms/{room.Id}/chat", new SendChat("准备开始"));
     Check((await guest.Get<RoomView>($"api/rooms/{room.Id}")).Messages.Single().Text == "准备开始", "room chat delivered");
 
+    Check(joined.Members.Length == 2 && joined2.Members.Length == 3, "create and join without map metadata");
     await using var fakeGame = new FakeGame();
-    await using var hostAgent = new RoomAgent(host, room, fakeInstall);
-    await using var guestAgent = new RoomAgent(guest, joined, fakeInstall);
-    await using var guestAgent2 = new RoomAgent(guest2, joined2, fakeInstall);
+    await using var hostAgent = new RoomAgent(host, room);
+    await using var guestAgent = new RoomAgent(guest, joined);
+    await using var guestAgent2 = new RoomAgent(guest2, joined2);
     hostAgent.Log += line => Console.WriteLine("HOST: " + line);
     guestAgent.Log += line => Console.WriteLine("GUEST: " + line);
     hostAgent.Start(); guestAgent.Start(); guestAgent2.Start();
@@ -180,13 +172,20 @@ try
     await Eventually(() => Task.FromResult(fakeGame.LastProxyAnnouncement != null), "guest republishes game on local UDP");
     Check(LanProtocol.Parse(fakeGame.LastProxyAnnouncement!).Port != fakeGame.Port, "guest advertises local proxy port");
 
+    Check(!Directory.Exists(Path.Combine(run, "Maps")), "native LAN listing advertised even with no local maps");
+    var originalAnnouncement = Fixtures.Announcement(fakeGame.Port);
+    Check(fakeGame.LastProxyAnnouncement![..^2].SequenceEqual(originalAnnouncement[..^2]), "native map metadata and host identity pass through unchanged");
+    fakeGame.MapPath = "Maps\\Download\\changed-map.w3x";
+    await Eventually(async () => (await guest.Get<RoomView>($"api/rooms/{room.Id}")).Game?.MapPath == fakeGame.MapPath, "host can switch map within same platform room");
+    await Eventually(() => Task.FromResult(LanProtocol.Parse(fakeGame.LastProxyAnnouncement!).MapPath == fakeGame.MapPath), "new map appears in native LAN advertisement without file checks");
+
     using var player = new TcpClient();
     using var player2 = new TcpClient();
     await player.ConnectAsync(IPAddress.Loopback, guestAgent.LocalPort);
     await player2.ConnectAsync(IPAddress.Loopback, guestAgent2.LocalPort);
     async Task RoundTrip(TcpClient client, byte seed, int size)
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var data = Enumerable.Range(0, size).Select(i => (byte)(i * 31 + seed)).ToArray();
         var received = new byte[size];
         var stream = client.GetStream();
@@ -198,6 +197,11 @@ try
     }
     await Task.WhenAll(RoundTrip(player, 7, 150000), RoundTrip(player2, 211, 120000));
     Check((await host.Get<RelayStats>("api/relay-status")).ActiveTunnels == 2, "independent simultaneous player tunnels");
+    var bulkTimer = Stopwatch.StartNew();
+    await RoundTrip(player, 93, 6 * 1024 * 1024);
+    Check(bulkTimer.Elapsed >= TimeSpan.FromSeconds(1), "bulk traffic is paced by relay bandwidth limit");
+    Check((await host.Get<RelayStats>("api/relay-status")).ActiveTunnels == 2, "multi-megabyte transfer preserves both player connections");
+    await RoundTrip(player, 17, 256);
     // Free guest2's connection for an explicit credential hijack test.
     player2.Close();
     await Eventually(async () => (await host.Get<RelayStats>("api/relay-status")).ActiveTunnels == 1, "guest TCP close cleans relay connection");

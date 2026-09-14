@@ -3,7 +3,8 @@ Description=Restore War3 IP HTTPS routing after Caddy restarts
 After=war3connect-acme.service
 
 [Service]
+EnvironmentFile=%h/.config/war3connect/deployment.env
 Type=oneshot
-ExecStart=/usr/bin/python3 %h/apps/war3connect/ops/aliyun-public-ip.py
+ExecStart=/usr/bin/python3 %h/apps/war3connect/ops/reconcile-public-ip.py
 TimeoutStartSec=45
 UMask=0077

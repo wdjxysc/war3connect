@@ -7,6 +7,7 @@ An ETag protects unrelated concurrent edits; unchanged configurations are not re
 import copy
 import fcntl
 import json
+import ipaddress
 import os
 from pathlib import Path
 import re
@@ -15,7 +16,16 @@ import tempfile
 import urllib.error
 import urllib.request
 
-IP = "203.0.113.10"
+def public_ip():
+    value = os.environ.get("WAR3CONNECT_PUBLIC_IP", "")
+    try:
+        address = ipaddress.IPv4Address(value)
+    except ipaddress.AddressValueError:
+        raise SystemExit("Set WAR3CONNECT_PUBLIC_IP to the deployment IPv4 address") from None
+    if not address.is_global:
+        raise SystemExit("WAR3CONNECT_PUBLIC_IP must be a public IPv4 address")
+    return str(address)
+
 BASE = Path.home() / "apps/war3connect"
 TLS = BASE / "tls"
 ADMIN = "http://127.0.0.1:2019/config/"
@@ -23,6 +33,7 @@ os.umask(0o077)
 
 
 def main():
+    IP = public_ip()
     with (TLS / "reconcile.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         with tempfile.TemporaryDirectory(dir=TLS) as scratch:

@@ -1,7 +1,12 @@
-param([string]$Address = 'http://127.0.0.1:5080')
+param([Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$Address)
 # Creates two isolated diagnostic accounts, then closes the test room and logs out.
 # Random passwords/tokens stay in process memory and are never printed.
 $ErrorActionPreference = 'Stop'
+$uri = $null
+if (-not [Uri]::TryCreate($Address, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https' -or $uri.UserInfo -or $uri.Query -or $uri.Fragment -or $uri.AbsolutePath -ne '/') {
+    throw '请提供不含账号信息的 HTTPS 服务器根地址。'
+}
+$Address = $uri.AbsoluteUri.TrimEnd('/')
 $suffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
 $probeHost = $null
 $probeGuest = $null
@@ -16,11 +21,11 @@ function Send-Api($Path, $Body, $Session) {
 try {
     $health = Invoke-RestMethod -Uri ($Address + '/health') -TimeoutSec 15
     if ($health.status -ne 'ok') { throw '健康检查失败。' }
+    if ($health.protocolVersion -ne 2) { throw '请先部署支持原生地图流程的 0.3.0 服务端。' }
     $probeHost = Send-Api '/api/register' @{username="probeH_$suffix"; password=[Guid]::NewGuid().ToString('N')} $null
     $probeGuest = Send-Api '/api/register' @{username="probeG_$suffix"; password=[Guid]::NewGuid().ToString('N')} $null
-    $mapHash = 'A' * 64
-    $room = Send-Api '/api/rooms' @{name="部署验证_$suffix";password='';gameVersion='1.27.0.52240';mapName='fixture.w3x';mapSha256=$mapHash;capacity=2} $probeHost
-    $null = Send-Api "/api/rooms/$($room.id)/join" @{password='';gameVersion='1.27.0.52240';mapSha256=$mapHash} $probeGuest
+    $room = Send-Api '/api/rooms' @{name="部署验证_$suffix";password='';gameVersion='1.27.0.52240';capacity=2} $probeHost
+    $null = Send-Api "/api/rooms/$($room.id)/join" @{password='';gameVersion='1.27.0.52240'} $probeGuest
     $packet = [System.IO.MemoryStream]::new()
     $writer = [System.IO.BinaryWriter]::new($packet)
     $writer.Write([byte[]]@(247,48,0,0,80,88,51,87))

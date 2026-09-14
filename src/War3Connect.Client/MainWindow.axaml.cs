@@ -14,7 +14,7 @@ namespace War3Connect.Client;
 
 public partial class MainWindow : Window
 {
-    private sealed record Settings(string Server, string Username, string Game, string Map, string? Wine = null, string? WinePrefix = null);
+    private sealed record Settings(string Server, string Username, string Game, string? Wine = null, string? WinePrefix = null);
     private readonly string _settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "War3Connect", "settings.json");
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(5) };
     private PlatformClient? _api;
@@ -34,7 +34,7 @@ public partial class MainWindow : Window
         {
             if (loadSettings && File.Exists(_settingsPath) && JsonSerializer.Deserialize<Settings>(File.ReadAllText(_settingsPath)) is { } s)
             {
-                WineBox.Text = s.Wine ?? "wine"; WinePrefixBox.Text = s.WinePrefix ?? ""; UsernameBox.Text = s.Username; GamePathBox.Text = s.Game; MapPathBox.Text = s.Map;
+                WineBox.Text = s.Wine ?? "wine"; WinePrefixBox.Text = s.WinePrefix ?? ""; UsernameBox.Text = s.Username; GamePathBox.Text = s.Game;
                 if (!string.IsNullOrWhiteSpace(s.Server)) ServerBox.Text = PlatformClient.ParseAddress(s.Server).AbsoluteUri.TrimEnd('/');
             }
         }
@@ -67,7 +67,7 @@ public partial class MainWindow : Window
         ServerBox.IsEnabled = UsernameBox.IsEnabled = PasswordBox.IsEnabled = !logged && !_busy;
         SaveServerButton.IsEnabled = DefaultServerButton.IsEnabled = !logged && !_busy;
         CreateButton.IsEnabled = JoinButton.IsEnabled = !_busy && logged && _room == null;
-        GameBrowseButton.IsEnabled = MapBrowseButton.IsEnabled = !_busy && _room == null;
+        GameBrowseButton.IsEnabled = !_busy && _room == null;
     }
     private async void LoginClick(object sender, RoutedEventArgs e) => await Run(() => Login(false));
     private async void RegisterClick(object sender, RoutedEventArgs e) => await Run(() => Login(true));
@@ -98,7 +98,7 @@ public partial class MainWindow : Window
         _api = api;
         PasswordBox.Text = "";
         AccountText.Text = "已登录 · " + api.Session!.Username;
-        StatusText.Text = "选择游戏和地图后，可以创建或加入房间。";
+        StatusText.Text = "选择游戏后，可以创建或加入平台房间；地图在 War3 内选择。";
         SaveSettings();
         await RefreshRooms();
     }
@@ -129,51 +129,51 @@ public partial class MainWindow : Window
         finally { _refreshing = false; }
     }
     private async void BrowseGameClick(object sender, RoutedEventArgs e) => await PickFile(GamePathBox, ["*.exe", "*.EXE"]);
-    private async void BrowseMapClick(object sender, RoutedEventArgs e) => await PickFile(MapPathBox, ["*.w3x", "*.w3m", "*.W3X", "*.W3M"]);
     private Task PickFile(TextBox target, string[] patterns) => Run(async () =>
     {
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "选择游戏或地图文件", FileTypeFilter = [new("War3") { Patterns = patterns }] });
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "选择 War3 游戏程序", FileTypeFilter = [new("War3") { Patterns = patterns }] });
         if (files.Count > 0) { target.Text = files[0].TryGetLocalPath(); SaveSettings(); }
     });
-    private async Task<GameInstallation> Inspect()
+    private GameInstallation Inspect()
     {
-        if (string.IsNullOrWhiteSpace(GamePathBox.Text) || string.IsNullOrWhiteSpace(MapPathBox.Text)) throw new InvalidOperationException("请先选择游戏和地图。");
-        StatusText.Text = "正在检查游戏版本和地图文件……";
-        var install = await GameInstallation.Inspect(GamePathBox.Text, MapPathBox.Text);
-        VersionText.Text = $"TFT {install.Version}\n地图校验 {install.MapHash[..12]}…";
+        if (string.IsNullOrWhiteSpace(GamePathBox.Text)) throw new InvalidOperationException("请先选择游戏。");
+        StatusText.Text = "正在检查游戏版本……";
+        var install = GameInstallation.Inspect(GamePathBox.Text);
+        VersionText.Text = $"TFT {install.Version}\n地图选择、下载和校验由 War3 处理。";
         SaveSettings();
         return install;
     }
-    private async void LaunchClick(object sender, RoutedEventArgs e) => await Run(async () =>
+    private async void LaunchClick(object sender, RoutedEventArgs e) => await Run(() =>
     {
-        var install = await Inspect();
+        var install = Inspect();
         install.Launch(WineBox.Text, WinePrefixBox.Text);
         StatusText.Text = "已启动游戏，请进入局域网；游戏端口使用 6112。";
+        return Task.CompletedTask;
     });
     private async void CreateClick(object sender, RoutedEventArgs e) => await Run(async () =>
     {
         RequireLogin();
-        var install = await Inspect();
-        var room = await _api!.Post<RoomView>("api/rooms", new CreateRoom((RoomNameBox.Text ?? "").Trim(), (RoomPasswordBox.Text ?? ""), install.Version, Path.GetFileName(install.MapFile), install.MapHash));
-        await Enter(room, install);
+        var install = Inspect();
+        var room = await _api!.Post<RoomView>("api/rooms", new CreateRoom((RoomNameBox.Text ?? "").Trim(), (RoomPasswordBox.Text ?? ""), install.Version));
+        await Enter(room);
     });
     private async void JoinClick(object sender, RoutedEventArgs e) => await Run(async () =>
     {
         RequireLogin();
         var selected = RoomsList.SelectedItem as RoomView ?? throw new InvalidOperationException("请先在大厅选中一个房间。");
-        var install = await Inspect();
-        var room = await _api!.Post<RoomView>($"api/rooms/{selected.Id}/join", new JoinRoom((RoomPasswordBox.Text ?? ""), install.Version, install.MapHash));
-        await Enter(room, install);
+        var install = Inspect();
+        var room = await _api!.Post<RoomView>($"api/rooms/{selected.Id}/join", new JoinRoom((RoomPasswordBox.Text ?? ""), install.Version));
+        await Enter(room);
     });
     private void RequireLogin()
     {
         if (_api?.Session == null) throw new InvalidOperationException("请先登录。");
         if (_room != null) throw new InvalidOperationException("请先退出当前房间。");
     }
-    private async Task Enter(RoomView room, GameInstallation install)
+    private async Task Enter(RoomView room)
     {
         _room = room;
-        var agent = new RoomAgent(_api!, room, install);
+        var agent = new RoomAgent(_api!, room);
         _agent = agent;
         agent.Log += message => Dispatcher.UIThread.Post(() => AppendLog(message));
         agent.Updated += updated => Dispatcher.UIThread.Post(() => { if (_agent == agent) ShowRoom(updated); });
@@ -191,7 +191,7 @@ public partial class MainWindow : Window
             throw;
         }
         ShowRoom(room);
-        StatusText.Text = room.HostId == _api!.Session!.UserId ? "房间已创建。请启动 War3，在局域网中使用所选地图建图。" : "已加入房间。请启动 War3，在局域网列表中等待并加入房主游戏。";
+        StatusText.Text = room.HostId == _api!.Session!.UserId ? "房间已创建。请启动 War3，在局域网中选择地图建图。" : "已加入房间。请启动 War3，在局域网列表中等待并加入房主游戏。";
         await RefreshRooms();
     }
     private void ShowRoom(RoomView room)
@@ -248,7 +248,7 @@ public partial class MainWindow : Window
         {
             var address = PlatformClient.ParseAddress(ServerBox.Text).AbsoluteUri.TrimEnd('/');
             Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
-            var content = JsonSerializer.Serialize(new Settings(address, UsernameBox.Text ?? "", GamePathBox.Text ?? "", MapPathBox.Text ?? "", WineBox.Text, WinePrefixBox.Text));
+            var content = JsonSerializer.Serialize(new Settings(address, UsernameBox.Text ?? "", GamePathBox.Text ?? "", WineBox.Text, WinePrefixBox.Text));
             File.WriteAllText(_settingsPath + ".tmp", content);
             File.Move(_settingsPath + ".tmp", _settingsPath, true);
             ServerBox.Text = address;

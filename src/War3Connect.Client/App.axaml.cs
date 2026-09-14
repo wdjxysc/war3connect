@@ -26,6 +26,7 @@ public partial class App : Application
                     if (window.FindControl<TextBox>("ServerBox")!.Text != ClientConfiguration.LoadServerUrl(Path.Combine(AppContext.BaseDirectory, "clientsettings.json"))) throw new Exception("服务器配置加载失败");
                     if (!window.FindControl<Button>("SaveServerButton")!.IsEnabled) throw new Exception("服务器保存按钮状态错误");
                     if (window.FindControl<StackPanel>("WinePanel")!.IsVisible != OperatingSystem.IsLinux()) throw new Exception("Wine 设置平台状态错误");
+                    if (window.FindControl<TextBox>("MapPathBox") != null || window.FindControl<Button>("MapBrowseButton") != null) throw new Exception("界面不应要求选择地图");
                     window.UpdateLayout();
                     using var bitmap = new RenderTargetBitmap(new PixelSize((int)window.Bounds.Width, (int)window.Bounds.Height));
                     bitmap.Render(window);

@@ -83,7 +83,14 @@ public sealed class Relay(ILogger<Relay> logger, TimeProvider clock)
                 if (result.MessageType != WebSocketMessageType.Binary) throw new IOException("Binary frames required");
                 if (Environment.TickCount64 - windowStart > 1000) { windowStart = Environment.TickCount64; windowBytes = 0; }
                 windowBytes += result.Count;
-                if (windowBytes > 2 * 1024 * 1024) throw new IOException("Relay bandwidth limit exceeded");
+                // Map downloads can legitimately fill the link. Apply backpressure rather than disconnecting.
+                if (windowBytes > 2 * 1024 * 1024)
+                {
+                    int delay = (int)Math.Max(1, 1000 - (Environment.TickCount64 - windowStart));
+                    await Task.Delay(delay, t.Stop.Token);
+                    windowStart = Environment.TickCount64;
+                    windowBytes = result.Count;
+                }
                 if (result.Count > 0)
                 {
                     await to.SendAsync(buffer.AsMemory(0, result.Count), WebSocketMessageType.Binary, true, t.Stop.Token);

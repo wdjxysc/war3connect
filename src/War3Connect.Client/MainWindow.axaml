@@ -32,13 +32,9 @@
           <TextBlock Text="使用经典 TFT 1.27 的 war3.exe。" FontSize="11" Foreground="#91A3B6" TextWrapping="Wrap"/>
           <TextBox x:Name="GamePathBox" IsReadOnly="True" TextWrapping="Wrap" MinHeight="30" MaxHeight="60" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
           <Button x:Name="GameBrowseButton" Content="选择游戏" Click="BrowseGameClick" HorizontalAlignment="Left" Margin="0,0,0,2"/>
-          <TextBlock Text="02  选择本局地图" FontWeight="SemiBold" Margin="0,8,0,6"/>
-          <TextBlock Text="地图需放在游戏目录的 Maps 文件夹中，所有玩家使用同一份文件。" FontSize="11" Foreground="#91A3B6" TextWrapping="Wrap"/>
-          <TextBox x:Name="MapPathBox" IsReadOnly="True" TextWrapping="Wrap" MinHeight="30" MaxHeight="60" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-          <Button x:Name="MapBrowseButton" Content="选择地图" Click="BrowseMapClick" HorizontalAlignment="Left" Margin="0,0,0,2"/>
-          <TextBlock x:Name="VersionText" Text="创建或加入房间时自动检查版本和地图。" TextWrapping="Wrap" Foreground="#91A3B6" FontSize="11" Margin="0,5,0,4"/>
+          <TextBlock x:Name="VersionText" Text="创建或加入房间时自动检查游戏版本。" TextWrapping="Wrap" Foreground="#91A3B6" FontSize="11" Margin="0,5,0,4"/>
           <StackPanel x:Name="WinePanel"><TextBlock Text="Wine 程序（默认 wine）"/><TextBox x:Name="WineBox"/><TextBlock Text="WINEPREFIX（可留空）"/><TextBox x:Name="WinePrefixBox"/></StackPanel><Button Content="启动 War3（窗口模式）" Click="LaunchClick" Margin="0,0,0,10"/>
-          <TextBlock Text="房主在游戏内建图；其他玩家通过局域网列表加入。对战期间保持平台运行。" Foreground="#91A3B6" TextWrapping="Wrap" FontSize="11"/>
+          <TextBlock Text="房主在 War3 局域网中选择地图建图；其他玩家在原生主机列表中加入。缺少地图时，由游戏内下载（房主需允许下载）。对战期间保持平台运行。" Foreground="#91A3B6" TextWrapping="Wrap" FontSize="11"/>
         </StackPanel></ScrollViewer>
       </DockPanel></Border>
       <Grid Grid.Column="1">
@@ -48,7 +44,7 @@
             <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
             <Grid Margin="0,0,0,10">
               <ListBox x:Name="RoomsList" Background="#101923" Foreground="#DCE6EF" BorderBrush="#2B3A4C" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8"><TextBlock Text="{Binding Name}" FontWeight="Bold"/><TextBlock FontSize="11" Foreground="#8FA3B8"><Run Text="{Binding HostName}"/><Run Text="  ·  "/><Run Text="{Binding GameVersion}"/><Run Text="  ·  "/><Run Text="{Binding MapName}"/><Run Text="  ·  密码："/><Run Text="{Binding HasPassword}"/></TextBlock></StackPanel></DataTemplate></ListBox.ItemTemplate>
+                <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8"><TextBlock Text="{Binding Name}" FontWeight="Bold"/><TextBlock FontSize="11" Foreground="#8FA3B8"><Run Text="{Binding HostName}"/><Run Text="  ·  "/><Run Text="{Binding GameVersion}"/><Run Text="  ·  密码："/><Run Text="{Binding HasPassword}"/></TextBlock></StackPanel></DataTemplate></ListBox.ItemTemplate>
               </ListBox>
               <TextBlock Text="暂无房间，可以创建一个" IsVisible="{Binding !ItemCount, ElementName=RoomsList}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#6D8197" IsHitTestVisible="False"></TextBlock>
             </Grid>

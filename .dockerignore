@@ -3,3 +3,15 @@
 artifacts
 data
 .git
+
+.private
+.env
+.env.*
+**/*.env
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/accounts.json
+**/accounts.json.tmp
+**/clientsettings.local.json

@@ -39,7 +39,7 @@ app.Use(async (context, next) =>
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(20) });
 app.UseForwardedHeaders();
 app.UseRateLimiter();
-app.MapGet("/health", () => new HealthView("ok", "0.1.0"));
+app.MapGet("/health", () => new HealthView("ok", Versions.Release, Versions.ProtocolVersion));
 app.MapPost("/api/register", async (Credentials c, Accounts a, Platform p) => p.Login(await a.Authenticate(c, true))).RequireRateLimiting("auth");
 app.MapPost("/api/login", async (Credentials c, Accounts a, Platform p) => p.Login(await a.Authenticate(c, false))).RequireRateLimiting("auth");
 var api = app.MapGroup("/api").RequireRateLimiting("api");

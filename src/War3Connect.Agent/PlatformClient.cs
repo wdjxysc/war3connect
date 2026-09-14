@@ -32,8 +32,14 @@ public sealed class PlatformClient : IDisposable
     }
     public async Task LoginAsync(string username, string password, bool register, CancellationToken ct = default)
     {
+        RequireCompatibleServer(await Get<HealthView>("health", ct));
         Session = await Post<LoginResult>(register ? "api/register" : "api/login", new Credentials(username, password), ct);
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Session.Token);
+    }
+    public static void RequireCompatibleServer(HealthView health)
+    {
+        if (health.ProtocolVersion != Versions.ProtocolVersion)
+            throw new InvalidOperationException("客户端与服务端版本不兼容。原生地图流程需要同步更新客户端和服务端至 0.3.0 或兼容版本。");
     }
     public async Task<T> Get<T>(string path, CancellationToken ct = default)
     {

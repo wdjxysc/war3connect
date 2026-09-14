@@ -1,16 +1,16 @@
-# API 0.1
+# API 0.3（protocolVersion 2）
 
 所有 `/api` 接口（注册、登录除外）及 `/relay` 接口需 `Authorization: Bearer <token>`。令牌不放在查询字符串中。错误响应格式为 `{ "error": "说明" }`；限流可返回空体 429。JSON 使用 camelCase。
 
 | 方法 | 路径 | 请求/返回 |
 | --- | --- | --- |
-| GET | `/health` | `{status, version}`，无鉴权 |
+| GET | `/health` | `{status, version, protocolVersion}`，无鉴权 |
 | POST | `/api/register` | `{username,password}` → `{token,userId,username}` |
 | POST | `/api/login` | 同上；使旧会话失效并退出旧房间 |
 | POST | `/api/logout` | 退出房间并撤销会话 |
 | GET | `/api/rooms` | 房间列表，不包含聊天和游戏公告 |
-| POST | `/api/rooms` | `{name,password,gameVersion,mapName,mapSha256,capacity}` → 房间 |
-| POST | `/api/rooms/{id}/join` | `{password,gameVersion,mapSha256}` → 房间 |
+| POST | `/api/rooms` | `{name,password,gameVersion,capacity}` → 房间 |
+| POST | `/api/rooms/{id}/join` | `{password,gameVersion}` → 房间 |
 | GET | `/api/rooms/{id}` | 成员私有房间状态，同时更新该成员心跳 |
 | POST | `/api/rooms/{id}/leave` | 退出；房主退出则关闭房间 |
 | POST | `/api/rooms/{id}/chat` | `{text}`，最多 500 字，保留最近 100 条 |
@@ -24,4 +24,8 @@
 
 注册/登录按来源 IP 每分钟限制 20 次，其他受保护接口按账号每分钟限制 360 次。每次 HTTP 请求体最多 16 KiB。客户端每 2 秒刷新当前房间，房主约每 350 ms 查询待接入连接，大厅每 5 秒刷新。
 
-房间地图 SHA-256 是平台预检查；原生 War3 协议中的地图校验字段原样保留。服务端无法仅凭文件名或客户端声明证明真实游戏版本/地图，也不据此实现反作弊或可信战绩。
+创建、加入房间和 `RoomView` 已移除 `mapName` / `mapSha256`；地图路径仅作为游戏公告 `GameView.mapPath` 的展示信息，不读本地地图、不用于准入校验。原生 War3 公告中的地图校验字段原样保留；中继不解释地图下载或校验报文。
+
+`/health` 返回 `protocolVersion: 2`，客户端在注册/登录前检查兼容性，连接旧服务端会明确提示同步升级，且不会提交账号操作。缺少 protocolVersion 的旧响应按版本 1 处理。0.3.0 需要同时更新服务端和客户端。
+
+每条中继每方向每 1 秒窗口最多转发 2 MiB，超过窗口额度时等待并对 TCP/WebSocket 施加背压，不因正常大文件传输直接关闭连接。连接取消时同时取消限速等待。

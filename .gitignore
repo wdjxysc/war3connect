@@ -5,3 +5,21 @@ artifacts/
 data/
 *.user
 *.log
+
+# Local operations notes and credentials
+.private/
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+!*.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+id_rsa
+id_ed25519
+accounts.json
+accounts.json.tmp
+clientsettings.local.json

@@ -9,7 +9,7 @@ public sealed class Platform
     private sealed record Session(Account User, DateTimeOffset Expires);
     private sealed class Room
     {
-        public required string Id, Name, PasswordHash, PasswordSalt, Version, MapName, MapHash;
+        public required string Id, Name, PasswordHash, PasswordSalt, Version;
         public required Account Host;
         public required int Capacity;
         public Dictionary<string, (Account User, DateTimeOffset Seen)> Members { get; } = [];
@@ -62,9 +62,8 @@ public sealed class Platform
     public RoomView Create(Account user, CreateRoom request)
     {
         if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Length > 40 || request.Password is null || request.Password.Length > 64
-            || !Versions.IsSupported(request.GameVersion) || !ValidHash(request.MapSha256)
-            || string.IsNullOrWhiteSpace(request.MapName) || request.MapName.Length > 200 || request.Capacity is < 2 or > 12)
-            throw new ApiException(400, "房间参数无效：请选择 1.27 游戏和地图，人数为 2～12。");
+            || !Versions.IsSupported(request.GameVersion) || request.Capacity is < 2 or > 12)
+            throw new ApiException(400, "房间参数无效：请选择 1.27 游戏，人数为 2～12。");
         lock (_gate)
         {
             EnsureNotInRoom(user.Id);
@@ -72,7 +71,7 @@ public sealed class Platform
             string salt = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
             var room = new Room { Id = Guid.NewGuid().ToString("N"), Name = request.Name.Trim(), Host = user,
                 PasswordSalt = salt, PasswordHash = request.Password.Length == 0 ? "" : PasswordHash(request.Password, salt),
-                Version = request.GameVersion, MapName = request.MapName, MapHash = request.MapSha256.ToUpperInvariant(), Capacity = request.Capacity };
+                Version = request.GameVersion, Capacity = request.Capacity };
             room.Members[user.Id] = (user, Now);
             _rooms.Add(room.Id, room);
             return View(room, true);
@@ -87,7 +86,6 @@ public sealed class Platform
                 && !CryptographicOperations.FixedTimeEquals(Convert.FromHexString(r.PasswordHash), Convert.FromHexString(PasswordHash(request.Password, r.PasswordSalt)))))
                 throw new ApiException(403, "房间密码错误。");
             if (r.Version != request.GameVersion) throw new ApiException(409, $"游戏版本不一致，房间要求 {r.Version}。");
-            if (!string.Equals(r.MapHash, request.MapSha256, StringComparison.OrdinalIgnoreCase)) throw new ApiException(409, "地图文件不一致，请选择与房主完全相同的地图。");
             if (!r.Members.ContainsKey(user.Id))
             {
                 EnsureNotInRoom(user.Id);
@@ -134,8 +132,6 @@ public sealed class Platform
         {
             var r = MemberRoom(user.Id, id);
             if (r.Host.Id != user.Id) throw new ApiException(403, "只有房主可发布游戏。");
-            if (!game.MapPath.Replace('\\', '/').Split('/').Last().Equals(r.MapName, StringComparison.OrdinalIgnoreCase))
-                throw new ApiException(409, "游戏内地图名称与房间地图不一致。");
             r.Game = new(request.Packet, game.Name, game.MapPath, Now);
         }
     }
@@ -195,9 +191,8 @@ public sealed class Platform
         return r;
     }
     private GameView? FreshGame(Room r) => r.Game != null && Now - r.Game.UpdatedAt < TimeSpan.FromSeconds(8) ? r.Game : null;
-    private RoomView View(Room r, bool privateView) => new(r.Id, r.Name, r.Host.Id, r.Host.Name, r.Version, r.MapName,
-        r.MapHash, r.Capacity, r.PasswordHash.Length > 0, r.Members.Values.Select(m => new MemberView(m.User.Id, m.User.Name, m.User.Id == r.Host.Id)).ToArray(),
+    private RoomView View(Room r, bool privateView) => new(r.Id, r.Name, r.Host.Id, r.Host.Name, r.Version,
+        r.Capacity, r.PasswordHash.Length > 0, r.Members.Values.Select(m => new MemberView(m.User.Id, m.User.Name, m.User.Id == r.Host.Id)).ToArray(),
         privateView ? r.Messages.ToArray() : [], privateView ? FreshGame(r) : null);
-    private static bool ValidHash(string? h) => h is { Length: 64 } && h.All(Uri.IsHexDigit);
     private static string PasswordHash(string text, string salt) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(salt + text)));
 }
