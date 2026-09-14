@@ -1,0 +1,11 @@
+[Unit]
+Description=Check War3 IP certificate renewal twice a day
+
+[Timer]
+OnCalendar=*-*-* 00,12:00:00
+RandomizedDelaySec=15m
+Persistent=true
+Unit=war3connect-cert-renew.service
+
+[Install]
+WantedBy=timers.target

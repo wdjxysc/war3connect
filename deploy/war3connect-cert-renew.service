@@ -1,0 +1,11 @@
+[Unit]
+Description=Renew War3 public IP TLS certificate
+After=war3connect-acme.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/python3 %h/apps/war3connect/ops/aliyun-public-ip.py
+ExecStart=%h/apps/war3connect/tls/certbot-venv/bin/certbot renew --non-interactive --no-random-sleep-on-renew --config-dir %h/apps/war3connect/tls/letsencrypt --work-dir %h/apps/war3connect/tls/work --logs-dir %h/apps/war3connect/tls/logs
+ExecStartPost=/usr/bin/python3 %h/apps/war3connect/ops/aliyun-public-ip.py
+TimeoutStartSec=600
+UMask=0077

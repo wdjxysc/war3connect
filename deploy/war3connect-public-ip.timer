@@ -1,0 +1,11 @@
+[Unit]
+Description=Maintain War3 public IP HTTPS configuration
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=30s
+AccuracySec=5s
+Unit=war3connect-public-ip.service
+
+[Install]
+WantedBy=timers.target

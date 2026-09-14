@@ -1,0 +1,14 @@
+[Unit]
+Description=War3 IP certificate HTTP challenge files (loopback only)
+After=network.target
+
+[Service]
+WorkingDirectory=%h/apps/war3connect/acme-webroot
+ExecStart=/usr/bin/python3 -m http.server 5081 --bind 127.0.0.1 --directory %h/apps/war3connect/acme-webroot
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
