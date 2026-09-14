@@ -28,6 +28,7 @@
             <TextBox x:Name="GamePathBox" IsReadOnly="True" Watermark="尚未选择 war3.exe" TextWrapping="Wrap" MinHeight="68" MaxHeight="92" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
             <Button x:Name="GameBrowseButton" Content="选择游戏目录中的 war3.exe" Click="BrowseGameClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
             <TextBlock x:Name="VersionText" Text="入房前会自动检查游戏版本。" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
+            <Button x:Name="ProbeStarCraftButton" Content="实验：探测本机星际主机" Click="ProbeStarCraftClick" IsVisible="False" HorizontalAlignment="Stretch"/>
             <StackPanel x:Name="WinePanel" Spacing="8"><TextBlock Text="WINE 环境" Classes="label"/><TextBox x:Name="WineBox" Watermark="wine"/><TextBox x:Name="WinePrefixBox" Watermark="WINEPREFIX（可留空）" ToolTip.Tip="独立 Wine 环境的绝对路径，留空使用环境默认值"/></StackPanel>
             <Button x:Name="LaunchButton" Content="启动 War3" Click="LaunchClick" Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
             <Border Height="1" Background="#263449" Margin="0,6"/>

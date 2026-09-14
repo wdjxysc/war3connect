@@ -12,5 +12,5 @@ mkdir -p "$output/docs"
 cp docs/LINUX-CLIENT.md docs/STARCRAFT.md "$output/docs/"
 if [[ "$rid" == linux-x64 ]]; then
     chmod +x "$output/War3Connect.Client"
-    tar -czf "artifacts/release/War3Connect-client-$rid-0.4.0.tar.gz" -C "$output" .
+    tar -czf "artifacts/release/War3Connect-client-$rid-0.4.1.tar.gz" -C "$output" .
 fi

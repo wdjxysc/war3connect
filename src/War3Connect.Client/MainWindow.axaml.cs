@@ -85,6 +85,7 @@ public partial class MainWindow : Window
         CreateButton.IsEnabled = JoinButton.IsEnabled = !_busy && logged && _room == null;
         GameBrowseButton.IsEnabled = !_busy && _room == null;
         GameSelector.IsEnabled = !_busy && _room == null;
+        ProbeStarCraftButton.IsEnabled = !_busy;
     }
     private async void LoginClick(object sender, RoutedEventArgs e) => await Run(() => Login(false));
     private async void RegisterClick(object sender, RoutedEventArgs e) => await Run(() => Login(true));

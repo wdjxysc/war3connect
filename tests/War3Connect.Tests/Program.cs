@@ -284,4 +284,5 @@ finally
     await server.WaitForExitAsync();
     await File.WriteAllTextAsync(Path.Combine(run, "server.log"), await stdout + await stderr);
 }
+await StarCraftNetworkChecks.Run(Check);
 Console.WriteLine($"SUCCESS: {checks} checks. Logs: {run}");

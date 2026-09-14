@@ -1,5 +1,8 @@
 using Avalonia.Controls;
 using War3Connect.Core;
+using War3Connect.Agent;
+using Avalonia.Interactivity;
+using System.Net;
 
 namespace War3Connect.Client;
 
@@ -32,6 +35,7 @@ public partial class MainWindow
         JoinButton.Content = IsStarCraft ? "加入准备房间" : "加入选中房间";
         EmptyRoomTitle.Text = IsStarCraft ? "星际准备大厅" : "等待下一场对战";
         EmptyRoomHint.Text = IsStarCraft ? "可创建准备房间并聊天，跨网对战尚未接入。" : "登录后创建房间，邀请朋友一起加入。";
+        ProbeStarCraftButton.IsVisible = IsStarCraft;
     }
 
     private async void GameSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -65,4 +69,17 @@ public partial class MainWindow
         WinePrefixBox.Text = "";
         GameSelector.SelectedIndex = 0;
     }
+
+    private async void ProbeStarCraftClick(object? sender, RoutedEventArgs e) => await Run(async () =>
+    {
+        AppendLog("星际实验探测：请先在游戏 LAN（UDP）中创建主机并停留房间，查询使用本机随机端口。");
+        var result = await StarCraftDiscoveryProbe.QueryAsync(new IPEndPoint(IPAddress.Loopback, StarCraftDiscoveryProbe.DiscoveryPort));
+        AppendLog($"探测端点：{result.LocalEndpoint} → {result.Target}；回复 {result.Replies.Length} 个。");
+        foreach (var reply in result.Replies)
+            AppendLog($"来源 {reply.Source}；历史公告头匹配：{reply.MatchesRecordedHeader}；原始数据：{reply.PacketHex}");
+        StatusText.Text = result.Replies.Length == 0
+            ? "未在随机端口收到回复；不能据此判断游戏未建主机或必须使用驱动。"
+            : "已收到 UDP 回复，详见日志；尚未验证公告重发、入房或对战。";
+        AppendLog(StatusText.Text);
+    });
 }
