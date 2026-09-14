@@ -1,0 +1,4 @@
+# Replace the hostname with a DNS record pointing at the server.
+play.example.com {
+    reverse_proxy 127.0.0.1:5080
+}

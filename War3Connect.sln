@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8F962042-1399-4F08-A88D-82B93F6DD173}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "War3Connect.Core", "src\War3Connect.Core\War3Connect.Core.csproj", "{30F727B8-06FD-4C05-8670-7D146C687170}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "War3Connect.Agent", "src\War3Connect.Agent\War3Connect.Agent.csproj", "{CCD591DE-74AA-4AD1-9007-CFC772066F0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "War3Connect.Server", "src\War3Connect.Server\War3Connect.Server.csproj", "{A86A4850-BC90-400B-B26D-689D9D746E7D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "War3Connect.Client", "src\War3Connect.Client\War3Connect.Client.csproj", "{5407A819-591D-475C-9B03-1AA3BF35FF52}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0903A938-16C5-4E92-9A27-F62B01D6A8D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "War3Connect.Tests", "tests\War3Connect.Tests\War3Connect.Tests.csproj", "{DEB9027B-9FF0-462E-8A88-659BABCACED9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{30F727B8-06FD-4C05-8670-7D146C687170}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30F727B8-06FD-4C05-8670-7D146C687170}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30F727B8-06FD-4C05-8670-7D146C687170}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30F727B8-06FD-4C05-8670-7D146C687170}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCD591DE-74AA-4AD1-9007-CFC772066F0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCD591DE-74AA-4AD1-9007-CFC772066F0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCD591DE-74AA-4AD1-9007-CFC772066F0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCD591DE-74AA-4AD1-9007-CFC772066F0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A86A4850-BC90-400B-B26D-689D9D746E7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A86A4850-BC90-400B-B26D-689D9D746E7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A86A4850-BC90-400B-B26D-689D9D746E7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A86A4850-BC90-400B-B26D-689D9D746E7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5407A819-591D-475C-9B03-1AA3BF35FF52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5407A819-591D-475C-9B03-1AA3BF35FF52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5407A819-591D-475C-9B03-1AA3BF35FF52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5407A819-591D-475C-9B03-1AA3BF35FF52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DEB9027B-9FF0-462E-8A88-659BABCACED9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEB9027B-9FF0-462E-8A88-659BABCACED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEB9027B-9FF0-462E-8A88-659BABCACED9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEB9027B-9FF0-462E-8A88-659BABCACED9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{30F727B8-06FD-4C05-8670-7D146C687170} = {8F962042-1399-4F08-A88D-82B93F6DD173}
+		{CCD591DE-74AA-4AD1-9007-CFC772066F0E} = {8F962042-1399-4F08-A88D-82B93F6DD173}
+		{A86A4850-BC90-400B-B26D-689D9D746E7D} = {8F962042-1399-4F08-A88D-82B93F6DD173}
+		{5407A819-591D-475C-9B03-1AA3BF35FF52} = {8F962042-1399-4F08-A88D-82B93F6DD173}
+		{DEB9027B-9FF0-462E-8A88-659BABCACED9} = {0903A938-16C5-4E92-9A27-F62B01D6A8D7}
+	EndGlobalSection
+EndGlobal
