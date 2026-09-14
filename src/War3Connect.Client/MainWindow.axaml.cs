@@ -54,6 +54,7 @@ public partial class MainWindow : Window
         };
         _timer.Start();
         UpdateButtons();
+        RenderLogs();
     }
     private async Task Run(Func<Task> action)
     {
@@ -104,6 +105,7 @@ public partial class MainWindow : Window
         _api = api;
         PasswordBox.Text = "";
         AccountText.Text = "已登录 · " + api.Session!.Username;
+        AppendLog("服务器连接成功，已登录平台。");
         StatusText.Text = "选择游戏后，可以创建或加入平台房间；地图在 War3 内选择。";
         SaveSettings();
         await RefreshRooms();
@@ -118,6 +120,7 @@ public partial class MainWindow : Window
         AccountText.Text = "未登录";
         RoomsList.ItemsSource = null;
         StatusText.Text = "已退出账号。";
+        AppendLog("已退出账号，服务器会话已结束。");
     });
     private async void RefreshClick(object sender, RoutedEventArgs e) => await Run(RefreshRooms);
     private async Task RefreshRooms()
@@ -197,6 +200,8 @@ public partial class MainWindow : Window
             throw;
         }
         ShowRoom(room);
+        RoomTabs.SelectedIndex = 1;
+        AppendLog(room.HostId == _api!.Session!.UserId ? "已创建房间，等待游戏内建图。" : "已加入房间，等待房主游戏公告。");
         StatusText.Text = room.HostId == _api!.Session!.UserId ? "房间已创建。请启动 War3，在局域网中选择地图建图。" : "已加入房间。请启动 War3，在局域网列表中等待并加入房主游戏。";
         await RefreshRooms();
     }
@@ -262,12 +267,6 @@ public partial class MainWindow : Window
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
         { StatusText.Text = "无法保存设置：" + e.Message; AppendLog(StatusText.Text ?? ""); return false; }
-    }
-    private void AppendLog(string message)
-    {
-        if (LogBox.Text?.Length > 24000) LogBox.Text = LogBox.Text[^12000..];
-        LogBox.Text += $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}";
-        LogBox.CaretIndex = LogBox.Text?.Length ?? 0;
     }
     private async void WindowClosing(object? sender, WindowClosingEventArgs e)
     {

@@ -1,69 +1,87 @@
 <Window x:Class="War3Connect.Client.MainWindow" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="War3 Connect · 1.27 内测版" Width="1200" Height="900" MinWidth="1120" MinHeight="830" Background="#0D1520" Foreground="#DCE6EF" FontFamily="Microsoft YaHei UI, Noto Sans CJK SC, sans-serif" FontSize="13" Closing="WindowClosing">
-  <DockPanel Margin="24">
-    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
-      <DockPanel><TextBlock DockPanel.Dock="Right" Text="TFT 1.27  /  内测版" Foreground="#91A3B6" VerticalAlignment="Center"/><TextBlock Text="WAR3 CONNECT" FontSize="26" FontWeight="Bold" Foreground="#D4AB63"/></DockPanel>
-      <TextBlock x:Name="StatusText" Text="连接服务器并登录，和朋友一起进入战场。" TextWrapping="Wrap" Foreground="#91A3B6"/>
-    </StackPanel>
-    <Border DockPanel.Dock="Top"  Margin="0,0,0,14" Padding="14" Background="#131E2B" CornerRadius="7"><DockPanel><TextBlock DockPanel.Dock="Top" Text="账号与服务器" Foreground="#D4AB63"/>
-      <Grid>
-        <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="1*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <StackPanel Margin="0,0,12,0">
-          <TextBlock Text="服务器地址（推荐 HTTPS）"/>
-          <TextBox x:Name="ServerBox" Margin="0"/>
-          <CheckBox x:Name="AllowHttpBox" Content="允许 HTTP（无证书）" Margin="0,4,0,0" />
-          <TextBlock Text="HTTP 不加密账号密码及对局数据，仅在可信网络使用。" FontSize="11" Foreground="#E9B66F" TextWrapping="Wrap" IsVisible="{Binding IsChecked, ElementName=AllowHttpBox}" />
-          <WrapPanel Margin="0,7,0,0">
-            <Button x:Name="SaveServerButton" Content="保存地址" Click="SaveServerClick" Padding="10,4" Margin="0,0,8,0"/>
-            <Button x:Name="DefaultServerButton" Content="使用默认" Click="DefaultServerClick" Padding="10,4" Margin="0"/>
-          </WrapPanel>
+        Title="War3 Connect · 对战平台" Width="1280" Height="900" MinWidth="1080" MinHeight="760" Background="#0B1220" Foreground="#E4EBF5" FontFamily="Microsoft YaHei UI, Noto Sans CJK SC, sans-serif" FontSize="13" Closing="WindowClosing">
+  <Grid Margin="24" RowDefinitions="Auto,Auto,*">
+    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,20">
+      <Border Width="48" Height="48" CornerRadius="13" Background="#E2B777" Margin="0,0,14,0"><TextBlock Text="W" FontSize="28" FontWeight="Bold" Foreground="#192131" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+      <StackPanel Grid.Column="1"><TextBlock Text="WAR3 CONNECT" FontSize="24" FontWeight="Bold"/><TextBlock x:Name="StatusText" Text="登录平台，开启一场属于朋友的对战。" Classes="muted" TextWrapping="Wrap" Margin="0,5,0,0"/></StackPanel>
+      <Border Grid.Column="2" Classes="badge" VerticalAlignment="Top"><TextBlock Text="CLASSIC TFT  /  1.27" FontSize="11" Foreground="#E2B777" /></Border>
+    </Grid>
+    <Border Grid.Row="1" Classes="card" Padding="18" Margin="0,0,0,18">
+      <Grid ColumnDefinitions="2*,*,*,Auto">
+        <StackPanel Margin="0,0,18,0">
+          <TextBlock Text="服务器连接" Classes="label"/>
+          <Grid ColumnDefinitions="*,Auto,Auto"><TextBox x:Name="ServerBox" Watermark="https://play.example.com"/><Button Grid.Column="1" x:Name="SaveServerButton" Content="保存" Click="SaveServerClick" Classes="quiet" Margin="8,0,0,0"/><Button Grid.Column="2" x:Name="DefaultServerButton" Content="默认" Click="DefaultServerClick" Classes="quiet" Margin="6,0,0,0"/></Grid>
+          <CheckBox x:Name="AllowHttpBox" Content="允许 HTTP（无证书）" FontSize="11" Margin="0,6,0,0" MinHeight="24"/>
+          <TextBlock Text="HTTP 不加密密码及对局数据，仅在可信网络使用。" FontSize="11" Foreground="#E2B777" TextWrapping="Wrap" IsVisible="{Binding IsChecked, ElementName=AllowHttpBox}" Margin="0,3,0,0"/>
         </StackPanel>
-        <StackPanel Grid.Column="1" Margin="0,0,12,0"><TextBlock Text="用户名"/><TextBox x:Name="UsernameBox" MaxLength="20" Margin="0"/></StackPanel>
-        <StackPanel Grid.Column="2" Margin="0,0,12,0"><TextBlock Text="密码（至少 8 位）"/><TextBox PasswordChar="●" x:Name="PasswordBox" MaxLength="128" Margin="0"/></StackPanel>
-        <StackPanel Grid.Column="3"><TextBlock x:Name="AccountText" Text="未登录" Foreground="#91A3B6"/><WrapPanel><Button x:Name="LoginButton" Content="登录" Click="LoginClick" Margin="0,0,8,0"/><Button x:Name="RegisterButton" Content="注册" Click="RegisterClick" Margin="0,0,8,0"/><Button x:Name="LogoutButton" Content="退出账号" Click="LogoutClick" IsEnabled="False" Margin="0"/></WrapPanel></StackPanel>
+        <StackPanel Grid.Column="1" Margin="0,0,12,0"><TextBlock Text="用户名" Classes="label"/><TextBox x:Name="UsernameBox" Watermark="你的对战昵称" MaxLength="20"/></StackPanel>
+        <StackPanel Grid.Column="2" Margin="0,0,18,0"><TextBlock Text="密码" Classes="label"/><TextBox x:Name="PasswordBox" Watermark="至少 8 位" PasswordChar="●" MaxLength="128"/></StackPanel>
+        <StackPanel Grid.Column="3"><TextBlock x:Name="AccountText" Text="未登录" Classes="label"/><StackPanel Orientation="Horizontal" Spacing="8"><Button x:Name="LoginButton" Content="登录" Click="LoginClick" Classes="primary"/><Button x:Name="RegisterButton" Content="注册" Click="RegisterClick"/><Button x:Name="LogoutButton" Content="退出" Click="LogoutClick" IsEnabled="False" Classes="quiet"/></StackPanel></StackPanel>
       </Grid>
-    </DockPanel></Border>
-    <Border DockPanel.Dock="Bottom"  Margin="0,14,0,0" Height="80" Padding="12" Background="#131E2B" CornerRadius="7"><DockPanel><TextBlock DockPanel.Dock="Top" Text="连接日志" Foreground="#D4AB63"/>
-      <TextBox x:Name="LogBox" AcceptsReturn="True" IsReadOnly="True" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0" FontSize="11"/>
-    </DockPanel></Border>
-    <Grid>
-      <Grid.ColumnDefinitions><ColumnDefinition Width="290"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Border Padding="14" Margin="0,0,14,0" Background="#131E2B" CornerRadius="7"><DockPanel><TextBlock DockPanel.Dock="Top" Text="游戏设置" Foreground="#D4AB63"/>
-        <ScrollViewer ScrollViewer.VerticalScrollBarVisibility="Auto"><StackPanel>
-          <TextBlock Text="01  选择游戏主程序" FontWeight="SemiBold"/>
-          <TextBlock Text="使用经典 TFT 1.27 的 war3.exe。" FontSize="11" Foreground="#91A3B6" TextWrapping="Wrap"/>
-          <TextBox x:Name="GamePathBox" IsReadOnly="True" TextWrapping="Wrap" MinHeight="30" MaxHeight="60" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-          <Button x:Name="GameBrowseButton" Content="选择游戏" Click="BrowseGameClick" HorizontalAlignment="Left" Margin="0,0,0,2"/>
-          <TextBlock x:Name="VersionText" Text="创建或加入房间时自动检查游戏版本。" TextWrapping="Wrap" Foreground="#91A3B6" FontSize="11" Margin="0,5,0,4"/>
-          <StackPanel x:Name="WinePanel"><TextBlock Text="Wine 程序（默认 wine）"/><TextBox x:Name="WineBox"/><TextBlock Text="WINEPREFIX（可留空）"/><TextBox x:Name="WinePrefixBox"/></StackPanel><Button Content="启动 War3（窗口模式）" Click="LaunchClick" Margin="0,0,0,10"/>
-          <TextBlock Text="房主在 War3 局域网中选择地图建图；其他玩家在原生主机列表中加入。缺少地图时，由游戏内下载（房主需允许下载）。对战期间保持平台运行。" Foreground="#91A3B6" TextWrapping="Wrap" FontSize="11"/>
-        </StackPanel></ScrollViewer>
-      </DockPanel></Border>
-      <Grid Grid.Column="1">
-        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="230"/></Grid.RowDefinitions>
-        <Border  Margin="0,0,0,12" Padding="14" Background="#131E2B" CornerRadius="7"><DockPanel><TextBlock DockPanel.Dock="Top" Text="对战大厅" Foreground="#D4AB63"/>
-          <Grid>
-            <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <Grid Margin="0,0,0,10">
-              <ListBox x:Name="RoomsList" Background="#101923" Foreground="#DCE6EF" BorderBrush="#2B3A4C" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8"><TextBlock Text="{Binding Name}" FontWeight="Bold"/><TextBlock FontSize="11" Foreground="#8FA3B8"><Run Text="{Binding HostName}"/><Run Text="  ·  "/><Run Text="{Binding GameVersion}"/><Run Text="  ·  密码："/><Run Text="{Binding HasPassword}"/></TextBlock></StackPanel></DataTemplate></ListBox.ItemTemplate>
-              </ListBox>
-              <TextBlock Text="暂无房间，可以创建一个" IsVisible="{Binding !ItemCount, ElementName=RoomsList}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#6D8197" IsHitTestVisible="False"></TextBlock>
+    </Border>
+    <Grid Grid.Row="2" ColumnDefinitions="270,18,*">
+      <Border Classes="card" Padding="18">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="12">
+            <TextBlock Text="游戏准备" FontSize="17" FontWeight="SemiBold"/>
+            <TextBlock Text="选择经典 TFT 1.27 的游戏程序。" Classes="muted" TextWrapping="Wrap"/>
+            <TextBox x:Name="GamePathBox" IsReadOnly="True" Watermark="尚未选择 war3.exe" TextWrapping="Wrap" MinHeight="68" MaxHeight="92" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+            <Button x:Name="GameBrowseButton" Content="选择游戏目录中的 war3.exe" Click="BrowseGameClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+            <TextBlock x:Name="VersionText" Text="入房前会自动检查游戏版本。" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
+            <StackPanel x:Name="WinePanel" Spacing="8"><TextBlock Text="WINE 环境" Classes="label"/><TextBox x:Name="WineBox" Watermark="wine"/><TextBox x:Name="WinePrefixBox" Watermark="WINEPREFIX（可留空）" ToolTip.Tip="独立 Wine 环境的绝对路径，留空使用环境默认值"/></StackPanel>
+            <Button Content="启动 War3" Click="LaunchClick" Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+            <Border Height="1" Background="#263449" Margin="0,6"/>
+            <TextBlock Text="一起开局" FontWeight="SemiBold"/>
+            <TextBlock Text="01  创建或加入平台房间&#10;&#10;02  房主在 War3 局域网中建图&#10;&#10;03  玩家从游戏内主机列表加入" Classes="muted" TextWrapping="Wrap" LineHeight="19"/>
+            <Border Background="#18283A" CornerRadius="8" Padding="12"><TextBlock Text="地图由游戏内选择、下载和校验。对战期间请保持平台运行。" Foreground="#9CB3CA" FontSize="11" TextWrapping="Wrap" LineHeight="18"/></Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+      <Grid Grid.Column="2" x:Name="WorkspaceGrid">
+        <Grid.RowDefinitions><RowDefinition Height="*" MinHeight="240"/><RowDefinition Height="12"/><RowDefinition Height="230" MinHeight="150"/></Grid.RowDefinitions>
+        <Border x:Name="RoomWorkspacePanel" Classes="card" Padding="16">
+          <TabControl x:Name="RoomTabs">
+            <TabItem Header="对战大厅">
+              <Grid RowDefinitions="*,Auto" Margin="0,12,0,0">
+                <Grid Margin="0,0,0,12">
+                  <ListBox x:Name="RoomsList" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate><DataTemplate><Border Padding="12" Margin="0,3" Background="#182538" CornerRadius="8"><StackPanel Spacing="6"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/><TextBlock Classes="muted" FontSize="11"><Run Text="{Binding HostName}"/><Run Text="  ·  TFT "/><Run Text="{Binding GameVersion}"/></TextBlock><TextBlock Text="需要房间密码" Foreground="#E2B777" FontSize="11" IsVisible="{Binding HasPassword}"/></StackPanel></Border></DataTemplate></ListBox.ItemTemplate>
+                  </ListBox>
+                  <StackPanel x:Name="EmptyRoomsPanel" IsVisible="{Binding !ItemCount, ElementName=RoomsList}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Spacing="8"><TextBlock Text="等待下一场对战" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock Text="登录后创建房间，邀请朋友一起加入。" Classes="muted" HorizontalAlignment="Center"/></StackPanel>
+                </Grid>
+                <Grid Grid.Row="1" RowDefinitions="Auto,Auto" ColumnDefinitions="*,170,Auto">
+                  <TextBox x:Name="RoomNameBox" Watermark="新房间名称" Text="朋友的对战房间" MaxLength="40" Margin="0,0,8,0"/>
+                  <TextBox Grid.Column="1" x:Name="RoomPasswordBox" Watermark="房间密码（选填）" PasswordChar="●" MaxLength="64" Margin="0,0,8,0"/>
+                  <Button Grid.Column="2" Content="刷新" Click="RefreshClick" Classes="quiet"/>
+                  <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8" Margin="0,10,0,0"><Button x:Name="CreateButton" Content="创建房间" Click="CreateClick" Classes="primary"/><Button x:Name="JoinButton" Content="加入选中房间" Click="JoinClick"/></StackPanel>
+                </Grid>
+              </Grid>
+            </TabItem>
+            <TabItem Header="当前房间">
+              <Grid RowDefinitions="Auto,*,Auto" Margin="0,12,0,0">
+                <StackPanel Spacing="5" Margin="0,0,0,10"><TextBlock x:Name="RoomTitle" Text="尚未加入房间" FontSize="17" FontWeight="SemiBold"/><TextBlock x:Name="MembersText" TextWrapping="Wrap"/><TextBlock x:Name="GameStatusText" Text="加入平台房间后，在 War3 的局域网列表中进入游戏。" Classes="muted" TextWrapping="Wrap" FontSize="11"/></StackPanel>
+                <TextBox Grid.Row="1" x:Name="MessagesBox" AcceptsReturn="True" IsReadOnly="True" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,10,0,0"><TextBox x:Name="ChatBox" Watermark="给队友发一条消息…" MaxLength="500" KeyDown="ChatKeyDown"/><Button Grid.Column="1" Content="发送" Click="SendClick" Classes="primary" Margin="8,0,0,0"/><Button Grid.Column="2" Content="退出房间" Click="LeaveClick" Classes="quiet" Margin="8,0,0,0"/></Grid>
+              </Grid>
+            </TabItem>
+          </TabControl>
+        </Border>
+        <GridSplitter x:Name="LogSplitter" Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Stretch" Background="Transparent"><GridSplitter.Template><ControlTemplate><Border Background="{TemplateBinding Background}"><Border Width="40" Height="3" CornerRadius="2" Background="#36475E" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></ControlTemplate></GridSplitter.Template></GridSplitter>
+        <Border Grid.Row="2" Classes="card" Padding="14">
+          <Grid RowDefinitions="Auto,Auto,*,Auto">
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10"><StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center"><Border Width="7" Height="7" CornerRadius="4" Background="#60C9B1" VerticalAlignment="Center"/><TextBlock Text="连接日志" FontSize="15" FontWeight="SemiBold"/></StackPanel><Button Grid.Column="1" x:Name="ExpandLogButton" Content="展开查看" Click="ExpandLogsClick" Classes="quiet compact"/></Grid>
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto,Auto,Auto" Margin="0,0,0,10">
+              <TextBox x:Name="LogFilterBox" Watermark="搜索日志关键字…" TextChanged="LogFilterChanged" MinHeight="30" Padding="9,5"/>
+              <CheckBox Grid.Column="1" x:Name="AutoScrollBox" Content="跟随最新" IsChecked="True" Click="FollowLogsClick" FontSize="11" Margin="12,0"/>
+              <Button Grid.Column="2" x:Name="CopyLogButton" Content="复制" Click="CopyLogsClick" Classes="quiet compact" ToolTip.Tip="复制当前筛选结果"/>
+              <Button Grid.Column="3" x:Name="ExportLogButton" Content="导出" Click="ExportLogsClick" Classes="quiet compact" Margin="6,0" ToolTip.Tip="导出当前筛选结果为文本文件"/>
+              <Button Grid.Column="4" x:Name="ClearLogButton" Content="清空" Click="ClearLogsClick" Classes="quiet compact"/>
             </Grid>
-            <StackPanel Grid.Row="1">
-              <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="145"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="RoomNameBox" Text="朋友的对战房间" MaxLength="40" Margin="0,0,8,6" ToolTip.Tip="新房间名称"/><TextBox PasswordChar="●" Grid.Column="1" x:Name="RoomPasswordBox" Margin="0,0,8,6" MaxLength="64" ToolTip.Tip="房间密码，留空表示公开"/><Button Grid.Column="2" Content="刷新" Click="RefreshClick" Margin="0,0,0,6"/></Grid>
-              <DockPanel><TextBlock DockPanel.Dock="Right" Text="右侧密码可留空" Foreground="#91A3B6" FontSize="11" VerticalAlignment="Center"/><WrapPanel><Button x:Name="CreateButton" Content="创建房间" Click="CreateClick" Margin="0,0,8,0"/><Button x:Name="JoinButton" Content="加入选中房间" Click="JoinClick" Margin="0"/></WrapPanel></DockPanel>
-            </StackPanel>
+            <TextBox Grid.Row="2" x:Name="LogBox" AcceptsReturn="True" IsReadOnly="True" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Cascadia Mono, Consolas, Noto Sans Mono, monospace" FontSize="12" Background="#0A1220" BorderBrush="#24334A" Watermark="连接事件会显示在这里。可搜索、复制或导出排查问题。"/>
+            <TextBlock Grid.Row="3" x:Name="LogSummaryText" Text="0 条记录 · 保留最近 500 条" Classes="muted" FontSize="10" Margin="0,7,0,0"/>
           </Grid>
-        </DockPanel></Border>
-        <Border Grid.Row="1"  Margin="0" Padding="14" Background="#131E2B" CornerRadius="7"><DockPanel><TextBlock DockPanel.Dock="Top" Text="当前房间" Foreground="#D4AB63"/>
-          <DockPanel>
-            <StackPanel DockPanel.Dock="Top"><TextBlock x:Name="RoomTitle" Text="尚未加入房间" FontWeight="Bold" Margin="0,0,0,3"/><TextBlock x:Name="MembersText" TextWrapping="Wrap" Margin="0,0,0,3"/><TextBlock x:Name="GameStatusText" Text="房主建图后，进入 War3 → 局域网加入。" Foreground="#91A3B6" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"/></StackPanel>
-            <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0"><Button DockPanel.Dock="Right" Content="退出房间" Click="LeaveClick" Margin="8,0,0,0"/><Button DockPanel.Dock="Right" Content="发送" Click="SendClick" Margin="8,0,0,0"/><TextBox x:Name="ChatBox" MaxLength="500" KeyDown="ChatKeyDown" Margin="0"/></DockPanel>
-            <TextBox x:Name="MessagesBox" AcceptsReturn="True" IsReadOnly="True" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0"/>
-          </DockPanel>
-        </DockPanel></Border>
+        </Border>
       </Grid>
     </Grid>
-  </DockPanel>
+  </Grid>
 </Window>

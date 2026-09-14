@@ -1,8 +1,16 @@
 <Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="War3Connect.Client.App" RequestedThemeVariant="Dark">
   <Application.Styles>
     <FluentTheme />
-    <Style Selector="TextBlock"><Setter Property="Margin" Value="0,3,0,6" /></Style>
-    <Style Selector="TextBox"><Setter Property="Margin" Value="0,3,0,10" /><Setter Property="Padding" Value="9,7" /></Style>
-    <Style Selector="Button"><Setter Property="Margin" Value="0,3,8,8" /><Setter Property="Padding" Value="14,8" /><Setter Property="Background" Value="#D4AB63" /><Setter Property="Foreground" Value="#14202B" /></Style>
+    <Style Selector="TextBlock"><Setter Property="Margin" Value="0"/></Style>
+    <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="#8FA2BA"/></Style>
+    <Style Selector="TextBlock.label"><Setter Property="Foreground" Value="#9CAEC4"/><Setter Property="FontSize" Value="11"/><Setter Property="Margin" Value="0,0,0,8"/></Style>
+    <Style Selector="Border.card"><Setter Property="Background" Value="#111D2D"/><Setter Property="BorderBrush" Value="#223149"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="12"/></Style>
+    <Style Selector="Border.badge"><Setter Property="Background" Value="#242637"/><Setter Property="CornerRadius" Value="6"/><Setter Property="Padding" Value="12,7"/></Style>
+    <Style Selector="TextBox"><Setter Property="Padding" Value="11,9"/><Setter Property="MinHeight" Value="38"/><Setter Property="Background" Value="#0C1625"/><Setter Property="BorderBrush" Value="#30415B"/><Setter Property="CornerRadius" Value="6"/></Style>
+    <Style Selector="Button"><Setter Property="Padding" Value="14,9"/><Setter Property="MinHeight" Value="36"/><Setter Property="CornerRadius" Value="6"/><Setter Property="Background" Value="#24364F"/><Setter Property="Foreground" Value="#DDE8F6"/><Setter Property="BorderThickness" Value="0"/></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#E2B777"/><Setter Property="Foreground" Value="#182131"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector="Button.quiet"><Setter Property="Background" Value="#1C2A3F"/><Setter Property="Foreground" Value="#9DB0C9"/></Style>
+    <Style Selector="Button.compact"><Setter Property="Padding" Value="10,4"/><Setter Property="MinHeight" Value="28"/><Setter Property="FontSize" Value="11"/></Style>
+    <Style Selector="Button:disabled"><Setter Property="Opacity" Value="0.45"/></Style>
   </Application.Styles>
 </Application>
