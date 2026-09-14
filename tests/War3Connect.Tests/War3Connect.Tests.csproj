@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <PropertyGroup><OutputType>Exe</OutputType><FileVersion>1.27.0.52240</FileVersion></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/War3Connect.Agent/War3Connect.Agent.csproj" />
     <ProjectReference Include="../../src/War3Connect.Server/War3Connect.Server.csproj" />

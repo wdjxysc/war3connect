@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$clientPath = Join-Path $projectRoot 'src/War3Connect.Client/bin/Release/net8.0-windows/War3Connect.Client.exe'
+$clientPath = Join-Path $projectRoot 'src/War3Connect.Client/bin/Release/net8.0/War3Connect.Client.exe'
 $previewPath = Join-Path $projectRoot 'artifacts/client-preview.png'
 if (-not (Test-Path -LiteralPath $clientPath)) { throw '请先构建客户端。' }
 $previewProcess = Start-Process -FilePath $clientPath -ArgumentList @('--smoke-test', ('"' + $previewPath + '"')) -WindowStyle Hidden -PassThru

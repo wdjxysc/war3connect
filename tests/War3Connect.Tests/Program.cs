@@ -107,6 +107,27 @@ string mapPath = Path.Combine(run, "Maps", "fixture.w3x");
 await File.WriteAllBytesAsync(mapPath, "test-map-content"u8.ToArray());
 string hash = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(mapPath)));
 var fakeInstall = new GameInstallation(Path.Combine(run, "war3.exe"), "1.27.0.52240", mapPath, hash);
+File.Copy(typeof(Fixtures).Assembly.Location, fakeInstall.Executable, true);
+Check(PeVersion.Read(fakeInstall.Executable) == "1.27.0.52240", "portable PE VERSIONINFO reads full fixed file version");
+var inspected = await GameInstallation.Inspect(fakeInstall.Executable, mapPath);
+Check(inspected.MapHash == hash && inspected.Version == fakeInstall.Version, "portable game inspection validates PE version and map hash");
+Check(GamePaths.ResolveMap(run, "maps\\FIXTURE.W3X") == mapPath, "Windows map paths resolve case-insensitively");
+Check(new[] { "Maps/../fixture.w3x", "/Maps/fixture.w3x", "C:/Maps/fixture.w3x", "Maps//fixture.w3x" }.All(p => GamePaths.ResolveMap(run, p) == null), "unsafe map paths rejected");
+var launch = fakeInstall.CreateLaunchInfo("/custom wine/bin/wine", Path.Combine(run, "wine prefix"));
+Check(!launch.UseShellExecute && launch.ArgumentList.Last() == "-window", "launch uses separate arguments without a shell");
+if (OperatingSystem.IsLinux())
+{
+    Check(launch.FileName == "/custom wine/bin/wine" && launch.ArgumentList[0] == fakeInstall.Executable && launch.Environment["WINEPREFIX"] == Path.Combine(run, "wine prefix"), "Linux Wine program, game path and prefix preserved");
+    var clash = Path.Combine(run, "Maps", "FIXTURE.W3X");
+    File.WriteAllText(clash, "different map");
+    Check(GamePaths.ResolveMap(run, "Maps/fixture.w3x") == null, "Linux ambiguous case variants rejected");
+    File.Delete(clash);
+}
+else Check(launch.FileName == fakeInstall.Executable && launch.ArgumentList.Count == 1, "Windows launches game directly");
+var invalidPe = Path.Combine(run, "invalid.exe");
+File.WriteAllBytes(invalidPe, [0x4d, 0x5a]);
+try { PeVersion.Read(invalidPe); throw new Exception("Invalid PE accepted"); }
+catch (BadImageFormatException) { Check(true, "truncated PE rejected"); }
 var portProbe = new TcpListener(IPAddress.Loopback, 0); portProbe.Start();
 int port = ((IPEndPoint)portProbe.LocalEndpoint).Port; portProbe.Stop();
 string address = $"http://127.0.0.1:{port}";

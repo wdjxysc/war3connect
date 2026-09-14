@@ -1,6 +1,6 @@
 # War3 Connect 0.1.0
 
-C# / .NET 8 实现的 Windows 魔兽争霸 III 经典 TFT 1.27 联机平台内测版。
+C# / .NET 8 实现的 Windows / Linux 魔兽争霸 III 经典 TFT 1.27 联机平台内测版。
 
 已部署的内测服务：**http://127.0.0.1:5080**。客户端填写此地址即可连接，使用可信 IP 证书，不需要 SSH 隧道。管理与证书续期说明见 [阿里云部署记录](docs/ALIYUN-DEPLOYMENT.md)。
 
@@ -8,7 +8,7 @@ C# / .NET 8 实现的 Windows 魔兽争霸 III 经典 TFT 1.27 联机平台内�
 
 ## 已实现
 
-- Windows WPF 中文客户端：注册、登录、大厅、创建/加入/退出房间、成员列表、文字聊天、游戏路径和地图选择、窗口模式启动。
+- Avalonia 跨平台中文客户端：注册、登录、大厅、创建/加入/退出房间、成员列表、文字聊天、游戏路径和地图选择、窗口模式启动。
 - 检查 `war3.exe` 文件版本，同一房间要求完整版本号一致，隔离 1.27a / 1.27b。
 - 使用 SHA-256 检查参与者选择的地图；房主发现游戏后核对游戏公告中的地图文件。
 - W3GS TFT 1.27 局域网发现、玩家本地游戏公告、动态本地 TCP 代理端口。
@@ -20,7 +20,7 @@ C# / .NET 8 实现的 Windows 魔兽争霸 III 经典 TFT 1.27 联机平台内�
 
 ## 开发环境与启动
 
-开发需要 Windows 10/11、.NET 8 SDK（包含 Windows Desktop 引用包）。服务端可运行于安装 ASP.NET Core 8 Runtime 的 Windows 或 Linux。
+开发需要 Windows 10/11 或 Linux、.NET 8 SDK；首次构建需联网下载 Avalonia NuGet 依赖。服务端可运行于安装 ASP.NET Core 8 Runtime 的 Windows 或 Linux。
 
 在项目根目录的 PowerShell 中执行：
 
@@ -37,7 +37,7 @@ C# / .NET 8 实现的 Windows 魔兽争霸 III 经典 TFT 1.27 联机平台内�
 ./scripts/start-client.ps1
 ```
 
-本地服务端默认监听 `http://127.0.0.1:5080`，测试本地服务时请在客户端填写此地址。客户端首次启动默认连接公网服务 `http://127.0.0.1:5080`。首次使用点击“注册”即可注册并登录；账号数据保存在根目录 `data/accounts.json`。客户端只保存服务器、用户名、游戏和地图路径，不保存密码或会话令牌，设置位于 `%LOCALAPPDATA%/War3Connect/settings.json`。
+本地服务端默认监听 `http://127.0.0.1:5080`，测试本地服务时请在客户端填写此地址。客户端首次启动默认连接公网服务 `http://127.0.0.1:5080`。首次使用点击“注册”即可注册并登录；账号数据保存在根目录 `data/accounts.json`。客户端只保存服务器、用户名、游戏和地图路径、Wine 设置，不保存密码或会话令牌，设置位于 `%LOCALAPPDATA%/War3Connect/settings.json`。
 
 脚本仅在程序尚未构建时自动编译。修改代码后请重新运行构建脚本。
 
@@ -65,10 +65,11 @@ C# / .NET 8 实现的 Windows 魔兽争霸 III 经典 TFT 1.27 联机平台内�
 
 输出：
 
-- `artifacts/release/War3Connect-client-0.1.0.zip`：解压后运行 `War3Connect.Client.exe`，需要 .NET 8 Windows Desktop Runtime。
+- `artifacts/release/War3Connect-client-win-x64-0.2.0.zip`：解压后运行 `War3Connect.Client.exe`，已包含 .NET 运行时。
+- `artifacts/release/War3Connect-client-linux-x64-0.2.0.tar.gz`：Linux x64 客户端，使用方法见 [Linux 客户端](docs/LINUX-CLIENT.md)。
 - `artifacts/release/War3Connect-server-0.1.0.zip`：解压后执行 `dotnet War3Connect.Server.dll`，需要 ASP.NET Core 8 Runtime。
 
-发布包是便携版，未包含运行时、安装器、自动更新或代码签名。服务端发布时关闭平台专用 apphost，可在兼容的 Windows/Linux .NET 运行时使用同一 DLL。
+客户端发布包是包含 .NET 运行时的便携版；未包含 Wine、游戏、安装器、自动更新或代码签名。服务端包仍需 ASP.NET Core 8 Runtime。服务端发布时关闭平台专用 apphost，可在兼容的 Windows/Linux .NET 运行时使用同一 DLL。
 
 ## 两台电脑如何联机
 
@@ -124,7 +125,7 @@ dotnet War3Connect.Server.dll --urls http://127.0.0.1:5080 --DataDirectory ./dat
 | --- | --- |
 | `src/War3Connect.Core` | 协议解析、共享消息、TCP/WebSocket 字节桥 |
 | `src/War3Connect.Agent` | HTTP 客户端、版本与地图检查、房间联机代理 |
-| `src/War3Connect.Client` | WPF Windows 客户端 |
+| `src/War3Connect.Client` | Avalonia Windows / Linux 客户端 |
 | `src/War3Connect.Server` | ASP.NET Core 账号、房间和中继服务 |
 | `tests/War3Connect.Tests` | 无第三方依赖的可执行测试程序 |
 | `scripts` | 构建、测试、启动、打包 |
